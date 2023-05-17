@@ -4,8 +4,10 @@
 void setup() {
   nm_setup();
   
+  delay(1000);
+  
   // 发送手指控制
-  // fingerAction(FingerNumber::Thumb, 50); // 0~100
+  fingerAction(FingerNumber::Thumb, 50); // 0~100
   // delay(3000);
 
   // 发送手势控制

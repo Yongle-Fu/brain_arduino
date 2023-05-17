@@ -20,8 +20,6 @@ private:
 
   int msgId = 0;
   bool sending = false;
-  // 发送指令
-  void sendCommand(const NMCommand& command);
 
 public:
   CommandWriter();
@@ -29,6 +27,9 @@ public:
 
   // 设置帧头
   void setStart(byte* st, unsigned int size);
+
+  // 适用于不等待直接发送指令，而当前默认使用的是同步等待方式：消息队列处理
+  void sendCommand(const NMCommand& command);
 
   // 将NMCommand结构体添加到消息队列
   void addToMessageQueue(NMCommand* command);

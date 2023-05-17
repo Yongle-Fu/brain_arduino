@@ -1,21 +1,33 @@
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 #include "nm_command_parser.h"
 #include "nm_command_writer.h"
 
 static CommandParser parser;
 static CommandWriter writer;
 
+SoftwareSerial commSerial(12, 11); // RX, TX
+
+// if use HardwareSerial
+// #define commSerial Serial1  
+
 void nm_setup() {
   Serial.begin(115200);
-  Serial1.begin(115200);
-  pinMode(PB2, OUTPUT);
-  pinMode(PB3, INPUT_PULLUP);
+  commSerial.begin(115200);
+  // Serial.begin(9600);
+  // commSerial.begin(9600);
+
+  // if use HardwareSerial
+  // pinMode(PB2, OUTPUT);
+  // pinMode(PB3, INPUT_PULLUP);
+
+  Serial.println("---------setup---------");
   // delay(1000);
 
   //设置缓冲区大小, 预计指令的最大的长度
-  parser.setBufferSize(30);  // 6 + payload_len
+  parser.setBufferSize(30);  // 6 + data_length
 
-  // Magic  : 固定字节 0x5a，以此识别帧头
+  // Magic: 固定字节 0x5a，以此识别帧头
   // Version: 协议版本号 版本号由01开始递增
   // 设置开始指令开始的匹配
   byte start[2] = { 0x5a, 0x01 };
@@ -41,7 +53,7 @@ void nm_setup() {
       Serial.print(" ");
     }
     Serial.println("\n");
-    delay(500);
+    delay(50);
     writer.processMessageQueue();
   });
 
@@ -54,28 +66,21 @@ void nm_setup() {
       if (i < length-1) Serial.print(", ");
     }
     //通过串口发送
-    Serial1.write(buff, length);
+    commSerial.write(buff, length);
     Serial.println("");
   });
-
-  //发送指令
-  // byte write_buff[] = { 0x5a, 0x01, 0x05, 0x01, 0x00, 0x00, 0x01, 0x20 };
-  // Serial1.write(write_buff, sizeof(write_buff));
-
-  // byte write_buff[] = { 0x5a, 0x01, 0x05, 0x01, 0x00, 0x01, 0x01, 0x32 };
-  // Serial1.write(write_buff, sizeof(write_buff));
-
-  Serial.println("");
-  Serial.println("---------setup---------");
 }
 
 void nm_loop() {
-  // Serial.println("loop");
-  while (Serial1.available()) {
-    // Serial.println("available");
+  while (commSerial.available()) {
     //接收指令, 直接跟串口结合
-    byte b = Serial1.read();
-    // Serial.println(b, HEX);
+    byte b = commSerial.read();
+
+    Serial.print("0x");
+    Serial.print(b, HEX);
+    if (commSerial.available()) Serial.print(", ");
+    else Serial.println("");
+    
     parser.onReceiveData(b);
   }
 }

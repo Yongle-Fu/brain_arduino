@@ -75,30 +75,36 @@ void CommandParser::onReceiveData(byte data) {
   *(buff + buffLen) = data;
   buffLen++;
 
-  byte packet_header_size = startSize + 1;
-  if (isStart && buffLen >= packet_header_size) {
+  byte payload_offset = startSize + 1;
+  byte params_offset = startSize + 4;
+  if (isStart && buffLen >= payload_offset) {
     byte payload_len = *(buff + startSize);
-    if (buffLen == payload_len + packet_header_size) {
+    // 一条指令回复
+    if (buffLen == payload_len + payload_offset) {
+      // 获取指令回复信息
+      byte cmd = *(buff + payload_offset);
+      byte cmd_attr = *(buff + payload_offset + 1);
+      byte resultCode = *(buff + payload_offset + 2);
+
       // 判断是否为完整指令（无分包）
-      byte cmd_attr = *(buff + startSize + 2);
       if ((cmd_attr & 0x1) == 0) {
-        // 获取命令类型
-        byte cmd = *(buff + startSize + 1) - 0x80;
-        // 获取返回结果
-        byte resultCode = *(buff + startSize + 3);
         // 判断返回值是否为字节流
         bool isBytes = (cmd_attr & 0x2) == 0;
         // 判断是否同步指令
         bool isSync = (cmd_attr & 0x4) == 0;
         if (resolveCommandCallback != NULL) {
           NMCommand command;
-          command.cmd = cmd & 0x7F;
+          command.cmd = (cmd - 0x80) & 0x7F;
           command.resultCode = resultCode;
           command.isBytes = isBytes;
           command.isSync = isSync;
-          command.params = buff + packet_header_size + 3;
-          command.length = buffLen - packet_header_size - 3;
+          command.params = buff + params_offset;
+          command.length = buffLen - params_offset;
           resolveCommandCallback(command);
+
+          isStart = false;
+          buffLen = 0;
+          memset(buff, 0, buffMaxSize);
         }
       }
     }

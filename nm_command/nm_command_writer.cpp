@@ -68,7 +68,7 @@ void CommandWriter::sendCommand(const NMCommand& command) {
       if (i < startSize) data[i] = startBuff[i];
       else if (i == startSize) data[i] = payload_len;
       else if (i == startSize+1) data[i] = command.cmd;
-      else if (i == startSize+2) data[i] = 0;
+      else if (i == startSize+2) data[i] = 0; //cmd_attr
       else data[i] = command.params[i-startSize-3];
   }
   sending = true;

@@ -27,16 +27,16 @@ void CommandWriter::setStart(byte* st, unsigned int size) {
 void CommandWriter::addToMessageQueue(NMCommand* command) {
   command->isBytes = true;
   command->isSync = true;
-  command->length = sizeof(command->params) + 1;
   command->msgId = msgId;
   msgId++;
+  Serial.print("command->length : " + String(command->length) + "\n");
   // Serial.print("msgId: " + String(msgId) + "\n");
   // Serial.println(command->params[0], HEX);
   // Serial.println(command->params[1], HEX);
   // Serial.println(command->params[2], HEX);
 
   const NMCommand& commandRef = *command;
-  if (sending) {
+  if (sendingMsgId >= 0) {
     messageQueue.enqueue(commandRef);
   } else {
     sendCommand(commandRef);
@@ -45,7 +45,7 @@ void CommandWriter::addToMessageQueue(NMCommand* command) {
 
 // 从消息队列中获取并处理NMCommand结构体消息
 void CommandWriter::processMessageQueue() {
-  sending = false;
+  sendingMsgId = -1;
   if (!messageQueue.isEmpty()) {
     NMCommand command = messageQueue.dequeue();
     sendCommand(command);
@@ -54,6 +54,14 @@ void CommandWriter::processMessageQueue() {
 
 void CommandWriter::setWriteCallback(void (*cb)(byte* buff, byte length)) {
   this->writeCallback = cb;
+}
+
+bool CommandWriter::isEmptyQueue() {
+  return messageQueue.isEmpty();
+}
+
+bool CommandWriter::isReadAvailable() {
+  return sendingMsgId < 0 && isEmptyQueue();
 }
 
 void CommandWriter::sendCommand(const NMCommand& command) {
@@ -71,7 +79,7 @@ void CommandWriter::sendCommand(const NMCommand& command) {
       else if (i == startSize+2) data[i] = 0; //cmd_attr
       else data[i] = command.params[i-startSize-3];
   }
-  sending = true;
+  sendingMsgId = command.msgId;
   CommandType cmdType = static_cast<CommandType>(command.cmd);
   uint8_t ctrlVal, numVal, posVal;
 

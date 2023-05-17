@@ -33,6 +33,47 @@ enum class ControlType : uint8_t {
   Servo = 0x06,   // 伺服电机控制
 };
 
+// read对象类型
+enum class ReadObjectType : uint8_t {
+  GPIO = 0x01, // GPIO读取
+  Sensor = 0x02, // 传感器读取
+  Interface = 0x03, // 接口读取
+  AIO = 0x04, // 
+};
+
+// read参数类型
+enum class ReadObjectParamType : uint8_t {
+  Data = 0x00, // 读取传感器输出值
+  Status = 0x01, // 读取传感器状态是否就绪，0:未就绪，1：就绪
+};
+
+// 传感器编号
+enum class SensorType : uint8_t {
+  SoftSmall = 1, // 小柔性传感器
+  Hall = 2, // 霍尔传感器
+  RGB = 3, // RGB传感器
+  Infrared = 4, // 红外传感器
+  Ultrasonic = 5, // 超声波传感器
+  Temperature = 6, // 温度传感器
+  Sound = 7, // 声音传感器
+  EMG = 8, // 肌电信号传感器
+  LED = 9, // LED控制
+  Potentiometer = 10, // 旋转电位传感器
+  Button = 11, // 按钮传感器
+  SoftBig = 12, // 大柔性传感器
+};
+
+// 传感器参数类型
+enum class SensorParamType : uint8_t {
+  Level = 0x01, // 等级
+  Distance = 0x02, // 距离
+  Temperature = 0x03, // 温度
+  RGB = 0x04, // RGB颜色值
+  Voltage = 0x05, // 电压
+  SwitchLevel = 0x06, // 开关等级
+  Adc = 0x07, // ADC值
+};
+
 // 手指序号枚举
 enum class FingerNumber : uint8_t {
   Thumb = 1,   // 大拇指
@@ -69,59 +110,11 @@ enum class GPIOValue : uint8_t {
   High = 0x01, // 输出高电平
 };
 
-// 马达编号枚举
-enum class MotorNumber : uint8_t {
-  Motor1 = 0,    // 马达1
-  Motor2 = 1     // 马达2
-};
-
-enum class LedNumber : uint8_t {
-    Led1 = 0,    // 马达1
-    Led2 = 1     // 马达2
-};
-
-enum class ReadObjectType : uint8_t {
-  GPIO = 0x01, // GPIO读取
-  Sensor = 0x02, // 传感器读取
-  Interface = 0x03, // 接口读取
-};
-
-// 读参数类型枚举
-enum class ReadObjectParamType : uint8_t {
-  Data = 0x00, // 读取传感器输出值
-  Status = 0x01, // 读取传感器状态是否就绪，0:未就绪，1：就绪
-};
-
-enum class SensorType : uint8_t {
-  Infrared = 1, // 红外传感器
-  Ultrasonic = 2, // 超声波传感器
-  Sound = 3, // 声音传感器
-  Temperature = 4, // 温度传感器
-  Hall = 5, // 霍尔传感器
-  RGB = 6, // RGB传感器
-  LED = 7, // LED控制
-  Potentiometer = 8, // 旋转电位传感器
-  Switch = 9, // 开关传感器
-  SoftSmall = 10, // 小柔性传感器
-  SoftBig = 11, // 大柔性传感器
-  EMG = 12, // 肌电信号传感器
-};
-
-// 传感器参数类型
-enum class SensorParamType : uint8_t {
-  Level = 0x01, // 等级
-  Distance = 0x02, // 距离
-  Temperature = 0x03, // 温度
-  RGB = 0x04, // RGB颜色值
-  Voltage = 0x05, // 电压
-  SwitchLevel = 0x06, // 开关等级
-  Adc = 0x07, // ADC值
-};
-
 const char* strCommandType(uint8_t value);
 const char* strControlType(uint8_t value);
 const char* strFingerNumber(uint8_t value);
 const char* strGestureNumber(uint8_t value);
+const char* strSensorType(uint8_t value);
 
 struct GPIOControl {
   ControlType type = ControlType::GPIO;  // 控制类型
@@ -190,7 +183,40 @@ struct NMCommand {
 
 void nm_setup();
 void nm_loop();
+
+// ******************************************Control*********************************************
+// 手指控制, position: 0~100, 动作位置百分比
 void nm_fingerAction(uint8_t finger, uint8_t position);
+// 手势控制, position: 0~100, 动作位置百分比
 void nm_gestureAction(uint8_t gesture, uint8_t position);
+
+
+// ******************************************Read Value******************************************
+// 检查是否可以发送数据
+bool nm_isReadAvailable();
+
+// Hall = 2, // 霍尔传感器
+// Infrared = 4, // 红外传感器
+// Sound = 7, // 声音传感器
+// Button = 11, // 按钮传感器
+bool nm_isSensorOn(SensorType sensorType); // 1 bytes, OFF-ON
+
+uint16_t nm_readUInt16(SensorType sensorType); 
+
+// 温度	6	Temperature	<int16>
+// [-200 - 1000](0.1℃)	1
+int16_t nm_readInt16(SensorType sensorType); 
+
+// 超声波	5	Distance	<uint16>
+// [0-1000]
+// (0.1cm)	1
+
+typedef void (*ValueCB)(const byte* bytes, uint8_t len);
+// interface: A-F, 0-6
+void nm_readRGB(uint8_t interface, ValueCB cb); // 3 bytes, R,G,B <uint8>
+
+// interface: A-F, 0-6
+void nm_readSensorValue(SensorType sensorType, uint8_t interface, ValueCB cb);
+void nm_readSensorStatus(SensorType sensorType, uint8_t interface, ValueCB cb);
 
 #endif

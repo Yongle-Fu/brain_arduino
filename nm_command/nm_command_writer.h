@@ -18,8 +18,8 @@ private:
   int startSize = 0;
   void (*writeCallback)(byte* buff, byte length) = NULL;
 
-  int msgId = 0;
-  bool sending = false;
+  int msgId = 0; // auto increment
+  int sendingMsgId = -1;
 
 public:
   CommandWriter();
@@ -34,11 +34,15 @@ public:
   // 将NMCommand结构体添加到消息队列
   void addToMessageQueue(NMCommand* command);
 
+  bool isEmptyQueue();
+
   // 从消息队列中获取并处理NMCommand结构体消息
   void processMessageQueue();
 
   // 设置发送数据的回调实现方式, 比如通过串口发送,i2c,spi发送等
   void setWriteCallback(void (*cb)(byte* buff, byte length));
+
+  bool isReadAvailable();
 };
 
 #endif

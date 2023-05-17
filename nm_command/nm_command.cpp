@@ -3,13 +3,16 @@
 #include "nm_command_parser.h"
 #include "nm_command_writer.h"
 
+
 static CommandParser parser;
 static CommandWriter writer;
 
-SoftwareSerial commSerial(12, 11); // RX, TX
-
-// if use HardwareSerial
-// #define commSerial Serial1  
+// #define hardwareSerialEnabled 1 
+#ifdef hardwareSerialEnabled
+  #define commSerial Serial1  
+#else
+  SoftwareSerial commSerial(12, 11); // RX, TX
+#endif
 
 void nm_setup() {
   Serial.begin(115200);
@@ -17,11 +20,12 @@ void nm_setup() {
   // Serial.begin(9600);
   // commSerial.begin(9600);
 
-  // if use HardwareSerial
-  // pinMode(PB2, OUTPUT);
-  // pinMode(PB3, INPUT_PULLUP);
+#ifdef hardwareSerialEnabled
+  pinMode(PB2, OUTPUT);
+  pinMode(PB3, INPUT_PULLUP);
+#endif  
 
-  Serial.println("---------setup---------");
+  Serial.println("\n---------setup---------");
   // delay(1000);
 
   //设置缓冲区大小, 预计指令的最大的长度
@@ -80,9 +84,40 @@ void nm_loop() {
     Serial.print(b, HEX);
     if (commSerial.available()) Serial.print(", ");
     else Serial.println("");
-    
+
     parser.onReceiveData(b);
   }
+}
+
+// 检查是否可以读取数据
+bool nm_isReadAvailable() {
+  return writer.isReadAvailable();
+}
+
+// interface: A-F, 0-6
+void nm_readRGB(uint8_t interface, ValueCB cb) {
+  nm_readSensorValue(SensorType::RGB, interface, cb);
+}
+
+void _readSensor(SensorType sensorType, ReadObjectParamType paramType, uint8_t interface, ValueCB cb) {  
+  NMCommand command;
+  command.cmd = static_cast<uint8_t>(CommandType::Read);
+  command.length = 4;
+  command.params = new byte[command.length]{ static_cast<uint8_t>(ReadObjectType::Sensor), static_cast<uint8_t>(paramType), static_cast<uint8_t>(sensorType), interface };
+  writer.addToMessageQueue(&command);
+}
+
+// interface: A-F, 0-6
+void nm_readSensorValue(SensorType sensorType, uint8_t interface, ValueCB cb) {
+  // while(!nm_isReadAvailable()) { 
+  //   Serial.println("wait read");
+  //   delay(500);  
+  // }
+  _readSensor(sensorType, ReadObjectParamType::Data, interface, cb);
+}
+
+void nm_readSensorStatus(SensorType sensorType, uint8_t interface, ValueCB cb) {
+  _readSensor(sensorType, ReadObjectParamType::Status, interface, cb);
 }
 
 // 手指控制
@@ -91,8 +126,8 @@ void nm_fingerAction(uint8_t finger, uint8_t position) {
   if (position > 100) position = 100;
   NMCommand command;
   command.cmd = static_cast<uint8_t>(CommandType::Control);
-  byte* params = new byte[3]{ static_cast<uint8_t>(ControlType::Finger), finger, position };
-  command.params = params;
+  command.length = 3;
+  command.params = new byte[command.length]{ static_cast<uint8_t>(ControlType::Finger), finger, position };
   writer.addToMessageQueue(&command);
 }
 
@@ -102,54 +137,54 @@ void nm_gestureAction(uint8_t gesture, uint8_t position) {
   if (position > 100) position = 100;
   NMCommand command;
   command.cmd = static_cast<uint8_t>(CommandType::Control);
-  byte* params = new byte[3]{ static_cast<uint8_t>(ControlType::Gesture), gesture, position };
-  command.params = params;
+  command.length = 3;
+  command.params = new byte[command.length]{ static_cast<uint8_t>(ControlType::Gesture), gesture, position };
   writer.addToMessageQueue(&command);
 }
 
-// LED 控制
-void nm_ledControl(LedNumber ledNum, int r, int g, int b) {
-  // 根据 LED 编号和亮度值执行对应的操作
-  switch (ledNum) {
-    case LedNumber::Led1:
-      // 控制 LED1
-      // ...
-      break;
-    case LedNumber::Led2:
-      // 控制 LED2
-      // ...
-      break;
-    // 可以在此处添加更多的 LED 编号
-    default:
-      break;
-  }
-}
+// // LED 控制
+// void nm_ledControl(LedNumber ledNum, int r, int g, int b) {
+//   // 根据 LED 编号和亮度值执行对应的操作
+//   switch (ledNum) {
+//     case LedNumber::Led1:
+//       // 控制 LED1
+//       // ...
+//       break;
+//     case LedNumber::Led2:
+//       // 控制 LED2
+//       // ...
+//       break;
+//     // 可以在此处添加更多的 LED 编号
+//     default:
+//       break;
+//   }
+// }
 
-// 马达控制
-void motorControl(byte* params, int length) {
-  if (length < 2) {
-    // 参数不足，无法执行操作
-    return;
-  }
+// // 马达控制
+// void motorControl(byte* params, int length) {
+//   if (length < 2) {
+//     // 参数不足，无法执行操作
+//     return;
+//   }
 
-  MotorNumber motorNum = static_cast<MotorNumber>(params[0]);
-  uint8_t motorValue = params[1];
+//   MotorNumber motorNum = static_cast<MotorNumber>(params[0]);
+//   uint8_t motorValue = params[1];
 
-  // 根据马达编号和速度值执行对应的操作
-  switch (motorNum) {
-    case MotorNumber::Motor1:
-      // 控制 Motor1
-      // ...
-      break;
-    case MotorNumber::Motor2:
-      // 控制 Motor2
-      // ...
-      break;
-    // 可以在此处添加更多的马达编号
-    default:
-      break;
-  }
-}
+//   // 根据马达编号和速度值执行对应的操作
+//   switch (motorNum) {
+//     case MotorNumber::Motor1:
+//       // 控制 Motor1
+//       // ...
+//       break;
+//     case MotorNumber::Motor2:
+//       // 控制 Motor2
+//       // ...
+//       break;
+//     // 可以在此处添加更多的马达编号
+//     default:
+//       break;
+//   }
+// }
 
 void gpioControl() {
   // 定义一个 GPIOControl 结构体对象
@@ -266,6 +301,38 @@ const char* strGestureNumber(uint8_t value) {
       return "Ok";
     default:
       return "Unknown";
+  }
+}
+
+// 将枚举类型转换为字符串
+const char* strSensorType(uint8_t value) {
+  switch (static_cast<SensorType>(value)) {
+    case SensorType::SoftSmall:
+      return "小柔性传感器";
+    case SensorType::Hall:
+      return "霍尔传感器";
+    case SensorType::RGB:
+      return "RGB传感器";
+    case SensorType::Infrared:
+      return "红外传感器";
+    case SensorType::Ultrasonic:
+      return "超声波传感器";
+    case SensorType::Temperature:
+      return "温度传感器";
+    case SensorType::Sound:
+      return "声音传感器";
+    case SensorType::EMG:
+      return "肌电信号传感器";
+    case SensorType::LED:
+      return "LED控制";
+    case SensorType::Potentiometer:
+      return "旋转电位传感器";
+    case SensorType::Button:
+      return "按钮传感器";
+    case SensorType::SoftBig:
+      return "大柔性传感器";
+    default:
+      return "未知";
   }
 }
 

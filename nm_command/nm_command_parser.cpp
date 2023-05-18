@@ -42,11 +42,26 @@ bool CommandParser::isMatchStart(byte startOffset) {
   return true;
 }
 
-void CommandParser::setResolveCommandCallback(void (*cb)(const NMCommand& command)) {
-  this->resolveCommandCallback = cb;
+void CommandParser::setMessageCallback(ResolvedCommandCallback cb) {
+  resolvedCommandCallback = cb;
 }
 
-void CommandParser::onReceiveData(byte data) {
+void CommandParser::reset() {
+  isStart = false;
+  buffLen = 0;
+  memset(buff, 0, buffMaxSize);
+}
+
+void CommandParser::checkReady() {
+  reset();
+}
+
+void CommandParser::onReceivedByte(byte data) {
+  if (buffLen == 0) Serial.print("onReceivedData, bytes=");
+  Serial.print("0x");
+  Serial.print(data, HEX);
+  Serial.print(", ");
+
   if (!isStart) {
     if (buffLen == 0 && data != *startBuff) {
       return;
@@ -87,26 +102,31 @@ void CommandParser::onReceiveData(byte data) {
       byte resultCode = *(buff + payload_offset + 2);
 
       // 判断是否为完整指令（无分包）
-      if ((cmd_attr & 0x1) == 0) {
+      if ((cmd_attr & 0x1) != 0) {
+        Serial.println("cmd_attr = " + cmd_attr);
+      } else {
         // 判断返回值是否为字节流
         bool isBytes = (cmd_attr & 0x2) == 0;
         // 判断是否同步指令
         bool isSync = (cmd_attr & 0x4) == 0;
-        if (resolveCommandCallback != NULL) {
-          NMCommand command;
-          command.cmd = (cmd - 0x80) & 0x7F;
-          command.resultCode = resultCode;
-          command.isBytes = isBytes;
-          command.isSync = isSync;
-          command.params = buff + params_offset;
-          command.length = buffLen - params_offset;
-          resolveCommandCallback(command);
 
-          isStart = false;
-          buffLen = 0;
-          memset(buff, 0, buffMaxSize);
+        NMCommand command;
+        command.cmd = (cmd - 0x80) & 0x7F;
+        command.resultCode = resultCode;
+        command.isBytes = isBytes;
+        command.isSync = isSync;
+        command.params = buff + params_offset;
+        command.length = buffLen - params_offset;
+        if (resolvedCommandCallback != NULL) {
+          resolvedCommandCallback(command);
         }
       }
+    
+      isStart = false;
+      buffLen = 0;
+      memset(buff, 0, buffMaxSize);
     }
   }
+
+  
 }

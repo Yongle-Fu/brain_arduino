@@ -18,7 +18,7 @@ bool NMQueue::isEmpty() {
   return (currentSize == 0);
 }
 
-void NMQueue::enqueue(const NMCommand& command) {
+void NMQueue::enqueue(NMCommand& command) {
   if (!isFull()) {
     rearIndex = (rearIndex + 1) % MAX_QUEUE_SIZE;
     queueArray[rearIndex] = command;

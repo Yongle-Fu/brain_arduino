@@ -1,21 +1,29 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+// #include <AltSoftSerial.h>
 #include "nm_command_parser.h"
 #include "nm_command_writer.h"
 
-
 static CommandParser parser;
 static CommandWriter writer;
+
+#define MAX_READ_BUFF_SIZE 4
+static int readBuffLen = 0;
+static byte readBuff[MAX_READ_BUFF_SIZE];
+static ValueArrayCallback readValueCb = NULL;
 
 // #define hardwareSerialEnabled 1 
 #ifdef hardwareSerialEnabled
   #define commSerial Serial1  
 #else
+  // AltSoftSerial commSerial(12, 11); // RX, TX
   SoftwareSerial commSerial(12, 11); // RX, TX
 #endif
 
 void nm_setup() {
   Serial.begin(115200);
+  while (!Serial) ; // wait for serial monitor
+
   commSerial.begin(115200);
   // Serial.begin(9600);
   // commSerial.begin(9600);
@@ -39,107 +47,148 @@ void nm_setup() {
   writer.setStart(start, 2);
 
   //设置指令处理回调
-  parser.setResolveCommandCallback([](const NMCommand& command) {
-    Serial.print("Response: cmd=");
-    Serial.print(strCommandType(command.cmd));
-    Serial.print(", retCode=");
-    Serial.print(command.resultCode);
+  parser.setMessageCallback([](NMCommand& command) {
+    command.msgId = writer.sendingMsgId;
+    Serial.print("msgId=" + String(command.msgId) + ", cmd=" + strCommandType(command.cmd));
+    Serial.print(", retCode=" + String(command.resultCode));
     if (!command.isBytes || !command.isSync) {
-      Serial.print(", isBytes=");
-      Serial.print(command.isBytes);
-      Serial.print(", isSync=");
-      Serial.print(command.isSync);
+      Serial.print(", isBytes=" + String(command.isBytes));
+      Serial.print(", isSync=" + String(command.isSync));
     }
+    if (command.length > 0) printHexBytes(", Params=", command.params, command.length);
+    else Serial.println();
 
-    if (command.length > 0) Serial.print(", Params=");
-    for (int i = 0; i < command.length; i++) {
-      Serial.print(command.params[i], HEX);
-      Serial.print(" ");
+    CommandType cmdType = static_cast<CommandType>(command.cmd);
+    if (cmdType == CommandType::Read) {
+      readBuffLen = command.length;
+      memset(readBuff, 0, MAX_READ_BUFF_SIZE);
+      if (readBuffLen > 0) {
+        memcpy(readBuff, command.params, readBuffLen);
+      }
     }
-    Serial.println("\n");
     delay(50);
     writer.processMessageQueue();
   });
 
   //设置发送数据的回调实现
-  writer.setWriteCallback([](byte* buff, byte length) {
-    Serial.print("Write, ");
-    for (int i = 0; i < length; i++) {
-      Serial.print("0x");
-      Serial.print(buff[i], HEX);
-      if (i < length-1) Serial.print(", ");
-    }
+  writer.setWriteCallback([](const byte* buff, byte length) {
+    printHexBytes(", bytes=", buff, length);
     //通过串口发送
     commSerial.write(buff, length);
-    Serial.println("");
+    commSerial.flush();
   });
 }
 
-void nm_loop() {
+void nm_read_serial() {
   while (commSerial.available()) {
-    //接收指令, 直接跟串口结合
+    // 一个一个字节从串口读取
     byte b = commSerial.read();
-
-    Serial.print("0x");
-    Serial.print(b, HEX);
-    if (commSerial.available()) Serial.print(", ");
-    else Serial.println("");
-
-    parser.onReceiveData(b);
+    parser.onReceivedByte(b);
   }
 }
 
 // 检查是否可以读取数据
-bool nm_isReadAvailable() {
-  return writer.isReadAvailable();
+bool nm_available() {
+  return writer.available();
 }
 
-// interface: A-F, 0-6
-void nm_readRGB(uint8_t interface, ValueCB cb) {
-  nm_readSensorValue(SensorType::RGB, interface, cb);
+void _wait_response(NMCommand command, unsigned long timeout = 7000) {
+  unsigned long startTime = millis(); // ms 
+  // us, micros(); // 记录开始时间
+  // unsigned long elapsedTime;
+  Serial.println("wait_response, msgId=" + String(command.msgId) + ", time="+ String(startTime) + ", timeout=" + String(timeout) + "ms"); 
+
+  while (!commSerial.available()) {
+    if (millis() - startTime >= timeout) {
+      Serial.println("wait_response timeout"); 
+      break; // 超时
+    }
+    // Serial.println("wait_response..."); 
+  }
+
+  if (commSerial.available()) {
+    nm_read_serial();
+    parser.checkReady();
+    writer.checkReady();
+  }
 }
 
-void _readSensor(SensorType sensorType, ReadObjectParamType paramType, uint8_t interface, ValueCB cb) {  
+void _get_sensor_values(SensorType sensorType, ReadObjectParamType paramType, uint8_t interface, ValueArrayCallback cb) {  
+  // readValueCb = cb;
+
+  if (interface > 5) interface = 0;
   NMCommand command;
   command.cmd = static_cast<uint8_t>(CommandType::Read);
   command.length = 4;
   command.params = new byte[command.length]{ static_cast<uint8_t>(ReadObjectType::Sensor), static_cast<uint8_t>(paramType), static_cast<uint8_t>(sensorType), interface };
   writer.addToMessageQueue(&command);
+  _wait_response(command);
 }
 
 // interface: A-F, 0-6
-void nm_readSensorValue(SensorType sensorType, uint8_t interface, ValueCB cb) {
-  // while(!nm_isReadAvailable()) { 
-  //   Serial.println("wait read");
-  //   delay(500);  
-  // }
-  _readSensor(sensorType, ReadObjectParamType::Data, interface, cb);
+bool nm_is_sensor_ready(SensorType sensorType, uint8_t interface) {
+  _get_sensor_values(sensorType, ReadObjectParamType::Status, interface, NULL);
+  auto is_ready = readBuff[0] != 0;
+  Serial.println(strSensorType(sensorType) + " ready status: " + String(is_ready));
+  return is_ready;
 }
 
-void nm_readSensorStatus(SensorType sensorType, uint8_t interface, ValueCB cb) {
-  _readSensor(sensorType, ReadObjectParamType::Status, interface, cb);
+byte* nm_get_sensor_bytes(SensorType sensorType, uint8_t interface) {
+  _get_sensor_values(sensorType, ReadObjectParamType::Data, interface, NULL);
+  printHexBytes(strSensorType(sensorType) +"=", readBuff, readBuffLen);
+  return readBuff;
+}
+
+byte nm_get_sensor_byte(SensorType sensorType, uint8_t interface) {
+  _get_sensor_values(sensorType, ReadObjectParamType::Data, interface, NULL);
+  auto value = readBuff[0];
+  Serial.println(strSensorType(sensorType) +"=" + String(value));
+  return value;
+}
+
+int16_t nm_get_sensor_int16(SensorType sensorType, uint8_t interface) {
+  _get_sensor_values(sensorType, ReadObjectParamType::Data, interface, NULL);
+  auto value = (readBuff[1] << 8) | readBuff[0]; // 小端，低地址在前
+  Serial.println(strSensorType(sensorType) +"=" + String(value));
+  return value;
+}
+
+byte* nm_get_rgb_values(uint8_t interface) {
+  return nm_get_sensor_bytes(SensorType::RGB, interface);
+}
+
+byte nm_get_rgb_value(uint8_t interface, uint8_t index) {
+  if (index > 2) index = 0;
+  nm_get_sensor_bytes(SensorType::RGB, interface);
+  auto value = readBuff[index];
+  if (index == 0) Serial.println("R=" + String(value));
+  else if (index == 1) Serial.println("G=" + String(value));
+  else if (index == 2) Serial.println("B=" + String(value));;
+  return value;
 }
 
 // 手指控制
 // position: 0~100, 动作位置百分比
-void nm_fingerAction(uint8_t finger, uint8_t position) {
+void nm_set_finger(uint8_t finger, uint8_t position) {
   if (position > 100) position = 100;
   NMCommand command;
   command.cmd = static_cast<uint8_t>(CommandType::Control);
   command.length = 3;
   command.params = new byte[command.length]{ static_cast<uint8_t>(ControlType::Finger), finger, position };
   writer.addToMessageQueue(&command);
+  _wait_response(command);
 }
 
 // 手势控制
 // position: 0~100, 动作位置百分比
-void nm_gestureAction(uint8_t gesture, uint8_t position) {
+void nm_set_gesture(uint8_t gesture, uint8_t position) {
   if (position > 100) position = 100;
   NMCommand command;
   command.cmd = static_cast<uint8_t>(CommandType::Control);
   command.length = 3;
   command.params = new byte[command.length]{ static_cast<uint8_t>(ControlType::Gesture), gesture, position };
   writer.addToMessageQueue(&command);
+  _wait_response(command);
 }
 
 // // LED 控制
@@ -215,7 +264,7 @@ void gpioControl() {
 }
 
 // 枚举类型转换为字符串
-const char* strCommandType(uint8_t value) {
+String strCommandType(uint8_t value) {
   CommandType type = static_cast<CommandType>(value);
   switch (type) {
     case CommandType::Control:
@@ -240,7 +289,7 @@ const char* strCommandType(uint8_t value) {
 }
 
 // 枚举类型转换为字符串
-const char* strControlType(uint8_t value) {
+String strControlType(uint8_t value) {
   ControlType type = static_cast<ControlType>(value);
   switch (type) {
     case ControlType::Finger:
@@ -261,7 +310,7 @@ const char* strControlType(uint8_t value) {
 }
 
 // 枚举类型转换为字符串
-const char* strFingerNumber(uint8_t value) {
+String strFingerNumber(uint8_t value) {
   FingerNumber type = static_cast<FingerNumber>(value);
   switch (type) {
     case FingerNumber::Thumb:
@@ -280,7 +329,7 @@ const char* strFingerNumber(uint8_t value) {
 }
 
 // 枚举类型转换为字符串
-const char* strGestureNumber(uint8_t value) {
+String strGestureNumber(uint8_t value) {
   GestureNumber type = static_cast<GestureNumber>(value);
   switch (type) {
     case GestureNumber::Reset:
@@ -305,8 +354,9 @@ const char* strGestureNumber(uint8_t value) {
 }
 
 // 将枚举类型转换为字符串
-const char* strSensorType(uint8_t value) {
-  switch (static_cast<SensorType>(value)) {
+String strSensorType(SensorType value) {
+  switch (value) {
+  // switch (static_cast<SensorType>(value)) {
     case SensorType::SoftSmall:
       return "小柔性传感器";
     case SensorType::Hall:
@@ -328,17 +378,27 @@ const char* strSensorType(uint8_t value) {
     case SensorType::Potentiometer:
       return "旋转电位传感器";
     case SensorType::Button:
-      return "按钮传感器";
+      return "Button传感器";
     case SensorType::SoftBig:
       return "大柔性传感器";
     default:
-      return "未知";
+      return "未知传感器";
   }
+}
+
+void printHexBytes(String prefix, const byte* buff, int len) {
+  Serial.print(prefix);
+  for (int i = 0; i < len; i++) {
+    Serial.print("0x");
+    Serial.print(buff[i], HEX);
+    if (i < len - 1) Serial.print(", ");
+  }
+  Serial.println();
 }
 
 /*
 // 枚举类型转换为字符串
-const char* enum(GPIOType value) {
+String enum(GPIOType value) {
   switch (value) {
     case GPIOType::Voltage:
       return "Voltage";
@@ -350,7 +410,7 @@ const char* enum(GPIOType value) {
 }
 
 // 枚举类型转换为字符串
-const char* enum(GPIOMode value) {
+String enum(GPIOMode value) {
   switch (value) {
     case GPIOMode::Output:
       return "Output";
@@ -362,7 +422,7 @@ const char* enum(GPIOMode value) {
 }
 
 // 枚举类型转换为字符串
-const char* enum(GPIOValue value) {
+String enum(GPIOValue value) {
   switch (value) {
     case GPIOValue::Low:
       return "Low";
@@ -374,7 +434,7 @@ const char* enum(GPIOValue value) {
 }
 
 // 枚举类型转换为字符串
-const char* enum(MotorNumber value) {
+String enum(MotorNumber value) {
   switch (value) {
     case MotorNumber::Motor1:
       return "Motor1";

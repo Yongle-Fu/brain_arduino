@@ -29,13 +29,11 @@ void CommandWriter::addToMessageQueue(NMCommand* command) {
   command->isSync = true;
   command->msgId = msgId;
   msgId++;
-  Serial.print("command->length : " + String(command->length) + "\n");
-  // Serial.print("msgId: " + String(msgId) + "\n");
-  // Serial.println(command->params[0], HEX);
-  // Serial.println(command->params[1], HEX);
-  // Serial.println(command->params[2], HEX);
+  // Serial.println("command->length: " + String(command->length));
+  // Serial.println("msgId: " + String(msgId));
+  // printHexBytes("command->params: ", command->params, command->length);
 
-  const NMCommand& commandRef = *command;
+  NMCommand& commandRef = *command;
   if (sendingMsgId >= 0) {
     messageQueue.enqueue(commandRef);
   } else {
@@ -52,19 +50,22 @@ void CommandWriter::processMessageQueue() {
   }
 }
 
-void CommandWriter::setWriteCallback(void (*cb)(byte* buff, byte length)) {
-  this->writeCallback = cb;
+void CommandWriter::checkReady() {
+  if (sendingMsgId < 0 && messageQueue.isEmpty()) {
+    return;
+  }
+  processMessageQueue();
 }
 
-bool CommandWriter::isEmptyQueue() {
-  return messageQueue.isEmpty();
+void CommandWriter::setWriteCallback(ValueArrayCallback cb) {
+  writeCallback = cb;
 }
 
-bool CommandWriter::isReadAvailable() {
-  return sendingMsgId < 0 && isEmptyQueue();
+bool CommandWriter::available() {
+  return sendingMsgId < 0 && messageQueue.isEmpty();
 }
 
-void CommandWriter::sendCommand(const NMCommand& command) {
+void CommandWriter::sendCommand(NMCommand& command) {
   if(writeCallback == NULL) {
     return;
   }
@@ -90,17 +91,17 @@ void CommandWriter::sendCommand(const NMCommand& command) {
       posVal = static_cast<uint8_t>(command.params[2]);
       switch (static_cast<ControlType>(ctrlVal)) {
         case ControlType::Finger:
-          Serial.println("Write, msgId: " + String(command.msgId) + ", control: " + strControlType(ctrlVal) + strFingerNumber(numVal) + ", position: " + String(posVal));
+          Serial.print("\nWrite, msgId: " + String(command.msgId) + ", control: " + strControlType(ctrlVal) + strFingerNumber(numVal) + ", position: " + String(posVal) + ", payload_len: " + String(payload_len) );
           break;
         case ControlType::Gesture:
-          Serial.println("Write, msgId: " + String(command.msgId) + ", control: " + strControlType(ctrlVal) + strGestureNumber(numVal) + ", position: " + String(posVal));
+          Serial.print("\nWrite, msgId: " + String(command.msgId) + ", control: " + strControlType(ctrlVal) + strGestureNumber(numVal) + ", position: " + String(posVal) + ", payload_len: " + String(payload_len) );
           break;
         default:
           break;
       }
       break;
     default:
-      Serial.println("Write, msgId: " + String(command.msgId) + ", cmd: " + strCommandType(command.cmd) + ", payload_len: " + String(payload_len));
+      Serial.print("\nWrite, msgId: " + String(command.msgId) + ", cmd: " + strCommandType(command.cmd) + ", payload_len: " + String(payload_len));
       break;
   }
   

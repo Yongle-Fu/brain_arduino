@@ -110,11 +110,13 @@ enum class GPIOValue : uint8_t {
   High = 0x01, // 输出高电平
 };
 
-const char* strCommandType(uint8_t value);
-const char* strControlType(uint8_t value);
-const char* strFingerNumber(uint8_t value);
-const char* strGestureNumber(uint8_t value);
-const char* strSensorType(uint8_t value);
+String strCommandType(uint8_t value);
+String strControlType(uint8_t value);
+String strFingerNumber(uint8_t value);
+String strGestureNumber(uint8_t value);
+String strSensorType(SensorType value);
+
+void printHexBytes(String prefix, const byte* buff, int len);
 
 struct GPIOControl {
   ControlType type = ControlType::GPIO;  // 控制类型
@@ -182,41 +184,44 @@ struct NMCommand {
 };
 
 void nm_setup();
-void nm_loop();
+void nm_read_serial();
 
 // ******************************************Control*********************************************
 // 手指控制, position: 0~100, 动作位置百分比
-void nm_fingerAction(uint8_t finger, uint8_t position);
+void nm_set_finger(uint8_t finger, uint8_t position);
 // 手势控制, position: 0~100, 动作位置百分比
-void nm_gestureAction(uint8_t gesture, uint8_t position);
-
+void nm_set_gesture(uint8_t gesture, uint8_t position);
 
 // ******************************************Read Value******************************************
 // 检查是否可以发送数据
-bool nm_isReadAvailable();
+bool nm_available();
 
+typedef void (*ValueArrayCallback)(const byte* buff, byte length); 
+// typedef void (*ValueCB)(const byte* bytes, uint8_t len);
+
+// interface: A-F, 0-6
+bool nm_is_sensor_ready(SensorType sensorType, uint8_t interface);
+byte* nm_get_sensor_bytes(SensorType sensorType, uint8_t interface);
+
+// 1 byte, OFF-ON
 // Hall = 2, // 霍尔传感器
 // Infrared = 4, // 红外传感器
 // Sound = 7, // 声音传感器
 // Button = 11, // 按钮传感器
-bool nm_isSensorOn(SensorType sensorType); // 1 bytes, OFF-ON
+byte nm_get_sensor_byte(SensorType sensorType, uint8_t interface);
 
-uint16_t nm_readUInt16(SensorType sensorType); 
-
+// 2 bytes
 // 温度	6	Temperature	<int16>
 // [-200 - 1000](0.1℃)	1
-int16_t nm_readInt16(SensorType sensorType); 
 
 // 超声波	5	Distance	<uint16>
 // [0-1000]
 // (0.1cm)	1
+int16_t nm_get_sensor_int16(SensorType sensorType, uint8_t interface);
 
-typedef void (*ValueCB)(const byte* bytes, uint8_t len);
-// interface: A-F, 0-6
-void nm_readRGB(uint8_t interface, ValueCB cb); // 3 bytes, R,G,B <uint8>
+// RGB color
+byte* nm_get_rgb_values(uint8_t interface);
+byte nm_get_rgb_value(uint8_t interface, uint8_t index);
 
-// interface: A-F, 0-6
-void nm_readSensorValue(SensorType sensorType, uint8_t interface, ValueCB cb);
-void nm_readSensorStatus(SensorType sensorType, uint8_t interface, ValueCB cb);
 
 #endif

@@ -19,7 +19,7 @@ public:
   bool isFull();
   bool isEmpty();
   
-  void enqueue(const NMCommand& command);
+  void enqueue(NMCommand& command);
   NMCommand dequeue();
 };
 

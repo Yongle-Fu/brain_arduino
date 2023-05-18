@@ -11,15 +11,13 @@
 
 #include <Arduino.h>
 #include "nm_command.h"
-
 class CommandWriter {
 private:
   byte* startBuff = NULL;
   int startSize = 0;
-  void (*writeCallback)(byte* buff, byte length) = NULL;
+  ValueArrayCallback writeCallback = NULL;
 
   int msgId = 0; // auto increment
-  int sendingMsgId = -1;
 
 public:
   CommandWriter();
@@ -29,20 +27,22 @@ public:
   void setStart(byte* st, unsigned int size);
 
   // 适用于不等待直接发送指令，而当前默认使用的是同步等待方式：消息队列处理
-  void sendCommand(const NMCommand& command);
+  void sendCommand(NMCommand& command);
 
   // 将NMCommand结构体添加到消息队列
   void addToMessageQueue(NMCommand* command);
-
-  bool isEmptyQueue();
 
   // 从消息队列中获取并处理NMCommand结构体消息
   void processMessageQueue();
 
   // 设置发送数据的回调实现方式, 比如通过串口发送,i2c,spi发送等
-  void setWriteCallback(void (*cb)(byte* buff, byte length));
+  void setWriteCallback(ValueArrayCallback cb);
 
-  bool isReadAvailable();
+  bool available();
+  
+  void checkReady();
+
+  int sendingMsgId = -1;
 };
 
 #endif

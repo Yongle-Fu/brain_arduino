@@ -11,6 +11,8 @@
 #include <Arduino.h>
 #include "nm_command.h"
 
+typedef void (*ResolvedCommandCallback)(NMCommand& command); 
+
 class CommandParser {
   private:
   bool isStart = false;
@@ -21,8 +23,10 @@ class CommandParser {
   int buffLen = 0;
   int buffMaxSize = 0;
   
-  void (*resolveCommandCallback)(const NMCommand& command) = NULL;
+  ResolvedCommandCallback resolvedCommandCallback = NULL;
+  
   bool isMatchStart(byte startOffset);
+  void reset();
 
   public:
   CommandParser();
@@ -35,9 +39,11 @@ class CommandParser {
   bool setBufferSize(unsigned int size);
 
   //设置解析到数据的回调
-  void setResolveCommandCallback(void (*cb)(const NMCommand& command));
+  void setMessageCallback(ResolvedCommandCallback cb);
   
   //往里添加数据进行解析
-  void onReceiveData(byte data);
+  void onReceivedByte(byte data);
+
+  void checkReady();
 };
 #endif

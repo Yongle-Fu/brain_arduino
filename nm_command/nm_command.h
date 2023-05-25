@@ -11,6 +11,17 @@
 
 #include <Arduino.h>
 
+enum class ResultCode : uint8_t {
+    Success = 0,    // 指令成功执行
+    NotFound = 1,   // 未找到指定设备/传感器
+    Busy = 2,       // 该动作/指令正在执行中
+    ParamError = 3, // 参数错误
+    Timeout = 4,    // 动作超时或读取超时
+    Unsupported = 5,// 未支持的指令
+    Unknown = 6,    // 未知错误
+    System = 7      // 系统故障
+};
+
 // 指令类型
 enum class CommandType : uint8_t {
   Control = 0x01, // 控制指令，可控制手势动作，外置马达舵机等动作
@@ -30,18 +41,20 @@ enum class ControlType : uint8_t {
   Led = 0x03,     // LED控制
   Motor = 0x04,   // 马达控制
   GPIO = 0x05,    // GPIO控制
-  Servo = 0x06,   // 伺服电机控制
+  Servo = 0x06,   // 舵机控制
+  Car = 0x07,     // 小车控制
 };
 
-// read对象类型
+// Read对象类型
 enum class ReadObjectType : uint8_t {
   GPIO = 0x01, // GPIO读取
   Sensor = 0x02, // 传感器读取
-  Interface = 0x03, // 接口读取
-  AIO = 0x04, // 
+  AIO = 0x03, // 模拟值读取
+  Finger = 0x04, // 手指位置读取
+  IRKey = 0x05, // 红外按键读取
 };
 
-// read参数类型
+// Read参数类型
 enum class ReadObjectParamType : uint8_t {
   Data = 0x00, // 读取传感器输出值
   Status = 0x01, // 读取传感器状态是否就绪，0:未就绪，1：就绪
@@ -76,11 +89,11 @@ enum class SensorParamType : uint8_t {
 
 // 手指序号枚举
 enum class FingerNumber : uint8_t {
-  Thumb = 1,   // 大拇指
-  Index = 2,   // 食指
-  Middle = 3,  // 中指
-  Ring = 4,    // 无名指
-  Little = 5,  // 小指
+  Thumb = 0x1,   // 大拇指
+  Index = 0x2,   // 食指
+  Middle = 0x3,  // 中指
+  Ring = 0x4,    // 无名指
+  Little = 0x5,  // 小指
 };
 
 // 手势序号枚举
@@ -95,6 +108,29 @@ enum class GestureNumber : uint8_t {
   Ok = 7         // OK
 };
 
+// 马达编号枚举
+enum class MotorNumber : uint8_t {
+  Motor1 = 0,    // 马达1
+  Motor2 = 1     // 马达2
+};
+
+enum class LedNumber : uint8_t {
+  Led1 = 0,    // LED 1
+  Led2 = 1     // LED 2
+};
+
+enum class ServoNumber : uint8_t {
+  Servo1 = 0,    // 舵机1
+  Servo2 = 1     // 舵机2
+};
+
+enum class CarAction : uint8_t {
+  Forward = 1,    // 前进
+  Backward = 2,   // 后退
+  Left = 3,       // 左转
+  Right = 4       // 右转
+};
+
 enum class GPIOType : uint8_t {
   Voltage = 0x00, // 输出电平
   PWM = 0x01,     // PWM输出
@@ -105,72 +141,90 @@ enum class GPIOMode : uint8_t {
   Input = 0x01,  // 输入模式
 };
 
-enum class GPIOValue : uint8_t {
+enum class GPIOLevel : uint8_t {
   Low = 0x00,  // 输出低电平
   High = 0x01, // 输出高电平
 };
 
-String strCommandType(uint8_t value);
-String strControlType(uint8_t value);
-String strFingerNumber(uint8_t value);
-String strGestureNumber(uint8_t value);
-String strSensorType(SensorType value);
+enum class IRKeyCode : uint8_t {
+  None = 0,     // 无按键
+  Key1 = 1,     // '1' 键
+  Key2 = 2,     // '2' 键
+  Key3 = 3,     // '3' 键
+  Key4 = 4,     // '4' 键
+  Key5 = 5,     // '5' 键
+  Key6 = 6,     // '6' 键
+  Key7 = 7,     // '7' 键
+  Key8 = 8,     // '8' 键
+  Key9 = 9,     // '9' 键
+  Key0 = 10,    // '0' 键
+  Power = 11,   // Power 键,
+  Plus = 12,    // '+' 键
+  Minus = 13,   // '-' 键
+  A = 14,       // 'A' 键
+  B = 15,       // 'B' 键
+  C = 16,       // 'C' 键
+  D = 17,       // 'D' 键
+  E = 18,       // 'E' 键
+  F = 19,       // 'F' 键
+  Func1 = 20,   // FUNC1 键
+  Func2 = 21,   // FUNC2 键
+  Func3 = 22,   // FUNC3 键
+};
 
-void printHexBytes(String prefix, const byte* buff, int len);
+enum class InterfaceCode : uint8_t {
+  A = 0,     // 接口A
+  B = 1,     // 接口B
+  C = 2,     // 接口C
+  D = 3,     // 接口D
+  E = 4,     // 接口E
+  F = 5      // 接口F, 高级接口
+};
+
+struct FingerControl {
+  ControlType type = ControlType::Finger;
+  uint8_t pos[5]; // 控制5个手指位置，动作位置百分比, 0~100, 0表示该手指无动作
+};
+
+struct GestureControl {
+  ControlType type = ControlType::Gesture;
+  GestureNumber no;                      // 手势编号
+  uint8_t pos;                           // 动作位置百分比, 0~100
+};
+
+struct LedControl {
+  ControlType type = ControlType::Led;
+  LedNumber no = LedNumber::Led1;         // LED编号
+  uint8_t rgb[3];                        
+};
+
+struct MotorControl {
+  ControlType type = ControlType::Motor;
+  MotorNumber no;
+  uint8_t direction; // 方向：0-前进，1-后退
+  uint8_t speed; // 转速度, [0-100]
+  uint8_t angle; // 转角度, [0-100]
+  uint8_t time;  // 时间, [0-255]
+};
 
 struct GPIOControl {
-  ControlType type = ControlType::GPIO;  // 控制类型
-  uint8_t object_num = 0;                // GPIO 对象序号
-  GPIOType gpio_type;                    // GPIO 类型（电平输出或 PWM 输出）
-  GPIOMode gpio_mode = GPIOMode::Output; // GPIO 模式（输入或输出）
-  uint8_t value = 0;                     // 输出值（电平输出为 0 或 1，PWM 输出为 0-100 的占空比）
+  ControlType type = ControlType::GPIO;  
+  uint8_t no = 0;                        // GPIO 编号[1-15] 
+  // GPIOType gpio_type;                 // GPIO 类型（电平输出或 PWM 输出）
+  GPIOLevel level;                       // 输出值（电平输出为高电平、低电平）
 };
 
-struct FingerData {
-  byte fingerNum; // 手指编号
-  byte fingerPos; // 手指动作位置百分比
+struct ServoControl {
+  ControlType type = ControlType::Servo;
+  ServoNumber no;
+  uint8_t angle; // 转角度, [0-100]
 };
 
-struct GestureData {
-  byte gestureNum; // 手势编号
-  byte gesturePos; // 手势动作位置百分比
-};
-
-struct LedData {
-  byte ledNum; // LED编号
-  byte red;    // 颜色R值
-  byte green;  // 颜色G值
-  byte blue;   // 颜色B值
-};
-
-struct MotorData {
-  byte motorNum;   // 马达编号
-  byte direction;  // 转动方向
-  byte speed;      // 转速度
-};
-
-struct GpioData {
-  byte gpioNum;       // GPIO编号
-  byte outputType;    // GPIO输出类型
-  byte outputValue;   // 输出值（详见GPIO输出说明）
-};
-
-struct ServoData {
-  byte servoNum; // servo编号
-  byte angle;    // 转动角度
-};
-
-struct Command {
-  CommandType type; // 控制类型
-  byte objNum;       // 对象序号
-  union {
-    FingerData finger; // 手指控制数据
-    GestureData gesture; // 手势控制数据
-    LedData led; // LED控制数据
-    MotorData motor; // 马达控制数据
-    GpioData gpio; // GPIO控制数据
-    ServoData servo; // 伺服电机控制数据
-  } data; // 参数数据
+struct CarControl {
+  ControlType type = ControlType::Car;
+  CarAction no;
+  uint8_t speed; // 速度, [0-100]
+  uint8_t time;  // 时间, [0-255]
 };
 
 struct NMCommand {
@@ -179,49 +233,52 @@ struct NMCommand {
   int resultCode;
   bool isBytes; // bytes or string
   bool isSync;
-  byte* params;
+  uint8_t* params;
   int length;
 };
 
 void nm_setup();
-void nm_read_serial();
+bool nm_read_available();
+bool nm_write_available();
+void nm_serial_read();
 
-// ******************************************Control*********************************************
-// 手指控制, position: 0~100, 动作位置百分比
-void nm_set_finger(uint8_t finger, uint8_t position);
-// 手势控制, position: 0~100, 动作位置百分比
-void nm_set_gesture(uint8_t gesture, uint8_t position);
+// ******************************************Control Methods******************************************
+void nm_set_finger(FingerControl* control);
+void nm_set_gesture(GestureControl* control);
+void nm_set_led(LedControl* control);
+void nm_set_motor(MotorControl* control);
+void nm_set_gpio(GPIOControl* control);
+void nm_set_servo(ServoControl* control);
+void nm_set_car(CarControl* control);
 
-// ******************************************Read Value******************************************
-// 检查是否可以发送数据
-bool nm_available();
-
+// ******************************************Read Methods******************************************
 typedef void (*ValueArrayCallback)(const byte* buff, byte length); 
 // typedef void (*ValueCB)(const byte* bytes, uint8_t len);
 
-// interface: A-F, 0-6
-bool nm_is_sensor_ready(SensorType sensorType, uint8_t interface);
-byte* nm_get_sensor_bytes(SensorType sensorType, uint8_t interface);
+bool nm_is_sensor_ready(SensorType sensorType, InterfaceCode interface);
+bool nm_is_sensor_on(SensorType sensorType, InterfaceCode interface);
 
-// 1 byte, OFF-ON
-// Hall = 2, // 霍尔传感器
-// Infrared = 4, // 红外传感器
-// Sound = 7, // 声音传感器
-// Button = 11, // 按钮传感器
-byte nm_get_sensor_byte(SensorType sensorType, uint8_t interface);
+uint8_t  nm_get_sensor_byte(SensorType sensorType, InterfaceCode interface);
+uint8_t* nm_get_sensor_bytes(SensorType sensorType, InterfaceCode interface);
 
-// 2 bytes
-// 温度	6	Temperature	<int16>
-// [-200 - 1000](0.1℃)	1
-
-// 超声波	5	Distance	<uint16>
-// [0-1000]
-// (0.1cm)	1
-int16_t nm_get_sensor_int16(SensorType sensorType, uint8_t interface);
+int16_t nm_get_sensor_int16(SensorType sensorType, InterfaceCode interface);
 
 // RGB color
-byte* nm_get_rgb_values(uint8_t interface);
-byte nm_get_rgb_value(uint8_t interface, uint8_t index);
+uint8_t nm_get_rgb_value(InterfaceCode interface, uint8_t index);
+uint8_t* nm_get_rgb_values(InterfaceCode interface);
 
+uint8_t nm_get_gpio(uint8_t no);// Digital, [1-15], [0-1], LOW-HIGH
+uint16_t nm_get_aio(uint8_t no); // Analog,  [1-10], [0-4095]
+
+uint8_t nm_get_finger(FingerNumber no);
+uint8_t nm_get_ir_key(); //[0-22]
+
+// ******************************************Print Methods******************************************
+String strCommandType(CommandType type);
+String strControlType(ControlType type);
+String strSensorType(SensorType type);
+String strFingerNumber(FingerNumber no);
+String strGestureNumber(GestureNumber no);
+void printHexBytes(String prefix, const byte* buff, int len);
 
 #endif

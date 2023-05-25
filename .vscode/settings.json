@@ -6,4 +6,8 @@
     "C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: Google, IndentWidth: 2}",
     "C_Cpp.clang_format_sortIncludes": true,
     "C_Cpp.clang_format_style": "google",
+    "files.associations": {
+        "cstddef": "cpp",
+        "cstdint": "cpp"
+    },
 }

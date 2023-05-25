@@ -80,28 +80,32 @@ void CommandWriter::sendCommand(NMCommand& command) {
       else if (i == startSize+2) data[i] = 0; //cmd_attr
       else data[i] = command.params[i-startSize-3];
   }
-  sendingMsgId = command.msgId;
-  CommandType cmdType = static_cast<CommandType>(command.cmd);
-  uint8_t ctrlVal, numVal, posVal;
 
+  sendingMsgId = command.msgId;
+  
+  CommandType cmdType = static_cast<CommandType>(command.cmd);
   switch (cmdType) {
-    case CommandType::Control:
-      ctrlVal = static_cast<uint8_t>(command.params[0]);
-      numVal = static_cast<uint8_t>(command.params[1]);
-      posVal = static_cast<uint8_t>(command.params[2]);
-      switch (static_cast<ControlType>(ctrlVal)) {
+    case CommandType::Control: {
+      uint8_t ctrlVal = command.params[0];
+      ControlType ctrlType = static_cast<ControlType>(ctrlVal);
+      switch (ctrlType) {
         case ControlType::Finger:
-          Serial.print("\nWrite, msgId: " + String(command.msgId) + ", control: " + strControlType(ctrlVal) + strFingerNumber(numVal) + ", position: " + String(posVal) + ", payload_len: " + String(payload_len) );
+          Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", control: Finger, payload_len: " + String(payload_len));
           break;
-        case ControlType::Gesture:
-          Serial.print("\nWrite, msgId: " + String(command.msgId) + ", control: " + strControlType(ctrlVal) + strGestureNumber(numVal) + ", position: " + String(posVal) + ", payload_len: " + String(payload_len) );
+        case ControlType::Gesture: {
+          uint8_t numVal = command.params[1];
+          uint8_t posVal = command.params[2];
+          Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", control: Gesture" + strGestureNumber(static_cast<GestureNumber>(numVal)) + ", position: " + String(posVal) + ", payload_len: " + String(payload_len));
           break;
+        }
         default:
+          Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", control: " + strControlType(ctrlType) + ", payload_len: " + String(payload_len));
           break;
       }
       break;
+    }
     default:
-      Serial.print("\nWrite, msgId: " + String(command.msgId) + ", cmd: " + strCommandType(command.cmd) + ", payload_len: " + String(payload_len));
+      Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", cmd: " + strCommandType(cmdType) + ", payload_len: " + String(payload_len));
       break;
   }
   

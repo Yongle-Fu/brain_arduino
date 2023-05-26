@@ -12,14 +12,14 @@
 #include <Arduino.h>
 
 enum class ResultCode : uint8_t {
-    Success = 0,    // 指令成功执行
-    NotFound = 1,   // 未找到指定设备/传感器
-    Busy = 2,       // 该动作/指令正在执行中
-    ParamError = 3, // 参数错误
-    Timeout = 4,    // 动作超时或读取超时
-    Unsupported = 5,// 未支持的指令
-    Unknown = 6,    // 未知错误
-    System = 7      // 系统故障
+  Success = 0,    // 指令成功执行
+  NotFound = 1,   // 未找到指定设备/传感器
+  Busy = 2,       // 该动作/指令正在执行中
+  ParamError = 3, // 参数错误
+  Timeout = 4,    // 动作超时或读取超时
+  Unsupported = 5,// 未支持的指令
+  Unknown = 6,    // 未知错误
+  System = 7      // 系统故障
 };
 
 // 指令类型
@@ -183,7 +183,7 @@ enum class InterfaceCode : uint8_t {
 
 struct FingerControl {
   ControlType type = ControlType::Finger;
-  uint8_t pos[5]; // 控制5个手指位置，动作位置百分比, 0~100, 0表示该手指无动作
+  uint8_t pos[5]; // 控制5个手指位置，动作位置百分比, 0~101, 0表示该手指无动作
 };
 
 struct GestureControl {
@@ -251,7 +251,7 @@ void nm_set_gpio(GPIOControl* control);
 void nm_set_servo(ServoControl* control);
 void nm_set_car(CarControl* control);
 
-// ******************************************Read Methods******************************************
+// *******************************************Read Methods********************************************
 typedef void (*ValueArrayCallback)(const byte* buff, byte length); 
 // typedef void (*ValueCB)(const byte* bytes, uint8_t len);
 
@@ -267,11 +267,12 @@ int16_t nm_get_sensor_int16(SensorType sensorType, InterfaceCode interface);
 uint8_t nm_get_rgb_value(InterfaceCode interface, uint8_t index);
 uint8_t* nm_get_rgb_values(InterfaceCode interface);
 
-uint8_t nm_get_gpio(uint8_t no);// Digital, [1-15], [0-1], LOW-HIGH
+bool nm_get_gpio(uint8_t no);// Digital, [1-15], [0-1], LOW-HIGH
 uint16_t nm_get_aio(uint8_t no); // Analog,  [1-10], [0-4095]
 
 uint8_t nm_get_finger(FingerNumber no);
-uint8_t nm_get_ir_key(); //[0-22]
+uint8_t nm_get_ir_key(); // return IR key code
+bool nm_is_ir_key_pressed(uint8_t key);
 
 // ******************************************Print Methods******************************************
 String strCommandType(CommandType type);

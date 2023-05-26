@@ -241,8 +241,7 @@ bool nm_is_sensor_ready(SensorType sensorType, InterfaceCode interface) {
 // 1 byte, OFF-ON
 bool nm_is_sensor_on(SensorType sensorType, InterfaceCode interface) {
   if (sensorType != SensorType::Hall && 
-      sensorType != SensorType::Infrared && 
-      sensorType != SensorType::Sound && 
+      sensorType != SensorType::Infrared &&  
       sensorType != SensorType::Button) {
     Serial.println("sensorType is not a switch sensor");
     return false;
@@ -254,6 +253,10 @@ bool nm_is_sensor_on(SensorType sensorType, InterfaceCode interface) {
 }
 
 uint8_t nm_get_sensor_byte(SensorType sensorType, InterfaceCode interface) {
+  if (sensorType != SensorType::Sound) {
+    Serial.println("sensorType is not a byte sensor");
+    return false;
+  }
   get_sensor_values(sensorType, ReadObjectParamType::Data, interface);
   auto value = readBuff[0];
   Serial.println(strSensorType(sensorType) + ": " + String(value));
@@ -274,9 +277,9 @@ int16_t get_buffer_int16() {
 // 超声波	5	Ultrasonic <uint16>   [0-1000] (0.1cm)
 // 温度	6	Temperature	 <int16>    [-200-1000] (0.1℃)
 int16_t nm_get_sensor_int16(SensorType sensorType, InterfaceCode interface) {
-  if (sensorType != SensorType::Temperature && 
+  if (sensorType != SensorType::SoftSmall &&
       sensorType != SensorType::Ultrasonic &&
-      sensorType != SensorType::SoftSmall &&
+      sensorType != SensorType::Temperature && 
       sensorType != SensorType::EMG &&
       sensorType != SensorType::Potentiometer) {
     Serial.println("sensorType is not a int16 sensor");
@@ -303,7 +306,7 @@ uint8_t* nm_get_rgb_values(InterfaceCode interface) {
 }
 
 // Digital, [1-15]
-uint8_t nm_get_gpio(uint8_t no) {
+bool nm_get_gpio(uint8_t no) {
   if (no < 1 || no > 15) {
     Serial.println("gpio no is out of range");
     return 0;
@@ -318,7 +321,7 @@ uint8_t nm_get_gpio(uint8_t no) {
   send_read_command(command);
   auto value = readBuff[0];
   Serial.println("GPIO_" + String(no) + ": " + String(value));
-  return value;
+  return value == 1;
 }
 
 // no,  [1-10]
@@ -363,6 +366,10 @@ uint8_t nm_get_ir_key() {
   auto value = readBuff[0];
   Serial.println("IRKey: " + String(value));
   return value;
+}
+
+bool nm_is_ir_key_pressed(uint8_t key) {
+  return nm_get_ir_key() == key;
 }
 
 // ******************************************Print Methods******************************************

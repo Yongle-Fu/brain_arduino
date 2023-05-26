@@ -127,6 +127,4 @@ void CommandParser::onReceivedByte(byte data) {
       memset(buff, 0, buffMaxSize);
     }
   }
-
-  
 }

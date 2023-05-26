@@ -5,19 +5,22 @@ void setup() {
   nm_setup();
   
   // 发送手指
-  setFinger(FingerNumber::Thumb, 50); // 0~100
-  Serial.println("fingerAction done");
+  // setFinger(FingerNumber::Thumb, 50); // 0~100
+  // Serial.println("fingerAction done");
   
-  // 发送手势控制
-  setGesture(GestureNumber::Wave, 90); // 0~100
-  Serial.println("gestureAction Wave done");
+  // // 发送手势控制
+  // setGesture(GestureNumber::Wave, 90); // 0~100
+  // Serial.println("gestureAction Wave done");
 
-  setGesture(GestureNumber::Pinch, 80); // 0~100
-  Serial.println("gestureAction Pinch done");
+  // setGesture(GestureNumber::Pinch, 80); // 0~100
+  // Serial.println("gestureAction Pinch done");
 
-  setLed(LedNumber::Led1, 100, 100, 100); 
-  setMotor(MotorNumber::Motor1, 0, 80, 90, 200);
+  // setLed(LedNumber::Led1, 100, 100, 100); 
+  // setMotor(MotorNumber::Motor1, 0, 80, 90, 200);
+
   setGPIO(1, GPIOLevel::High);
+  return;
+  
   setServo(ServoNumber::Servo1, 45);
   setCar(CarAction::Forward, 50, 1000);
 

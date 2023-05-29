@@ -112,6 +112,7 @@ enum class GestureNumber : uint8_t {
 enum class MotorNumber : uint8_t {
   Motor1 = 0,    // 马达1
   Motor2 = 1     // 马达2
+  MotorAll = 2   // 马达1+2
 };
 
 enum class LedNumber : uint8_t {

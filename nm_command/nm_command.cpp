@@ -17,7 +17,8 @@ static ValueArrayCallback readValueCb = NULL;
 #else
   // #include <AltSoftSerial.h>
   // AltSoftSerial commSerial(12, 11); // RX, TX
-  SoftwareSerial commSerial(12, 11); // RX, TX
+  // SoftwareSerial commSerial(12, 11); // RX, TX
+  SoftwareSerial commSerial(19, 18); // RX, TX
 #endif
 
 void nm_setup() {

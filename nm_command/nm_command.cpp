@@ -32,7 +32,7 @@ void nm_setup() {
 #endif  
 
   Serial.println("\n---------setup---------");
-  // delay(1000);
+  Serial.println("Build: 2023/06/02-17:00");
 
   //设置缓冲区大小, 预计指令的最大的长度
   parser.setBufferSize(30);  // 6 + data_length

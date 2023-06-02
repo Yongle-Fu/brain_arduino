@@ -3,9 +3,7 @@
 
 static NMQueue messageQueue; // 消息队列
 
-CommandWriter::CommandWriter() {
-  // messageQueue = NMQueue();
-}
+CommandWriter::CommandWriter() {}
 CommandWriter::~CommandWriter() {
   if(startBuff != NULL) {
     free(startBuff);
@@ -29,9 +27,6 @@ void CommandWriter::addToMessageQueue(NMCommand* command) {
   command->isSync = true;
   command->msgId = msgId;
   msgId++;
-  // Serial.println("command->length: " + String(command->length));
-  // Serial.println("msgId: " + String(msgId));
-  // printHexBytes("command->params: ", command->params, command->length);
 
   NMCommand& commandRef = *command;
   if (sendingMsgId >= 0) {

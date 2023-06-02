@@ -104,9 +104,11 @@ enum class GestureNumber : uint8_t {
   SidePinch = 3, // 侧捏取
   Tripod = 4,    // 三脚架
   Wave = 5,      // 波浪
-  Victory = 6,   // 胜利
-  Ok = 7         // OK
+  Scissors = 6,  // 剪刀
+  Rock = 7,      // 石头
+  Paper = 8      // 布
 };
+
 
 // 马达编号枚举
 enum class MotorNumber : uint8_t {

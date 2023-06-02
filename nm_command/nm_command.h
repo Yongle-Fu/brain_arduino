@@ -111,7 +111,7 @@ enum class GestureNumber : uint8_t {
 // 马达编号枚举
 enum class MotorNumber : uint8_t {
   Motor1 = 0,    // 马达1
-  Motor2 = 1     // 马达2
+  Motor2 = 1,    // 马达2
   MotorAll = 2   // 马达1+2
 };
 

@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include "nm_mblock.h"
 
+void _delay(float seconds) {
+  long endTime = millis() + seconds * 1000;
+  while(millis() < endTime) _loop();
+}
+
 void setup() {
   nm_setup();
   

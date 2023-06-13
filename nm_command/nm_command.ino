@@ -66,6 +66,5 @@ void setup() {
   Serial.println("setup done");
 }
 
-void loop() {
-  
-}
+void loop() {}
+void _loop() {}

@@ -478,10 +478,12 @@ String strGestureNumber(GestureNumber no) {
       return "Tripod";
     case GestureNumber::Wave:
       return "Wave";
-    case GestureNumber::Victory:
-      return "Victory";
-    case GestureNumber::Ok:
-      return "Ok";
+    case GestureNumber::Scissors:
+      return "Scissors";
+    case GestureNumber::Rock:
+      return "Rock";
+    case GestureNumber::Paper:
+      return "Paper";  
   }
 }
 

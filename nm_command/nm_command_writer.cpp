@@ -1,5 +1,6 @@
 #include "nm_command_writer.h"
 #include "nm_queue.h"
+#include "logger.h"
 
 static NMQueue messageQueue; // 消息队列
 
@@ -85,22 +86,23 @@ void CommandWriter::sendCommand(NMCommand& command) {
       ControlType ctrlType = static_cast<ControlType>(ctrlVal);
       switch (ctrlType) {
         case ControlType::Finger:
-          Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", control: Finger, payload_len: " + String(payload_len));
+          Logger::print_log(DEBUG, "wr,msgid:%d, ctr:finger, payload len:%d",sendingMsgId, payload_len );
           break;
         case ControlType::Gesture: {
           uint8_t numVal = command.params[1];
           uint8_t posVal = command.params[2];
-          Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", control: Gesture" + strGestureNumber(static_cast<GestureNumber>(numVal)) + ", position: " + String(posVal) + ", payload_len: " + String(payload_len));
+          Logger::print_log(DEBUG, "wr,msgid:%d, ctr:gesture, %s,pos:%d,len:%d",sendingMsgId, strGestureNumber(static_cast<GestureNumber>(numVal)).c_str(),posVal, payload_len);
+
           break;
         }
         default:
-          Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", control: " + strControlType(ctrlType) + ", payload_len: " + String(payload_len));
+          Logger::print_log(DEBUG, "wr,msgid:%d, ctr:%s,len:%d",sendingMsgId, strControlType(ctrlType).c_str(),  payload_len);
           break;
       }
       break;
     }
     default:
-      Serial.print("\nWrite, msgId: " + String(sendingMsgId) + ", cmd: " + strCommandType(cmdType) + ", payload_len: " + String(payload_len));
+          Logger::print_log(DEBUG, "wr,msgid:%d, cmd:%s,len:%d",sendingMsgId, strCommandType(cmdType).c_str(),  payload_len);
       break;
   }
   

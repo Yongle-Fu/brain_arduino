@@ -2,6 +2,8 @@
 #include <SoftwareSerial.h>
 #include "nm_command_parser.h"
 #include "nm_command_writer.h"
+#include "logger.h"
+
 
 static CommandParser parser;
 static CommandWriter writer;
@@ -11,6 +13,7 @@ static int readBuffLen = 0;
 static byte readBuff[MAX_READ_BUFF_SIZE];
 static ValueArrayCallback readValueCb = NULL;
 
+LogLevel Logger::m_level = INFO;
 // #define hardwareSerialEnabled 1 
 #ifdef hardwareSerialEnabled
   #define commSerial Serial1  
@@ -48,17 +51,18 @@ void nm_setup() {
   parser.setMessageCallback([](NMCommand& command) {
     command.msgId = writer.sendingMsgId;
     CommandType cmdType = static_cast<CommandType>(command.cmd);
-    Serial.print("msgId=" + String(command.msgId) + ", cmd=" + strCommandType(cmdType));
+    Logger::print_log(DEBUG, "msgid=%d, cmd=%d, ret=%d", command.msgId, cmdType, command.resultCode);
     // if (cmdType == CommandType::Control) {
     //   auto ctrl = command.params[0];
     //   Serial.print(", contorl=" + strControlType(static_cast<ControlType>(ctrl)));
     // }
-    Serial.print(", retCode=" + String(command.resultCode));
+    // Serial.print(", retCode=" + String(command.resultCode));
     if (!command.isBytes || !command.isSync) {
-      Serial.print(", isBytes=" + String(command.isBytes));
-      Serial.print(", isSync=" + String(command.isSync));
+      Logger::print_log(DEBUG, "isBytes=%d",command.isBytes);
+      Logger::print_log(DEBUG, "isSync=%d",command.isSync);
     }
-    if (command.length > 0) printHexBytes(", Params=", command.params, command.length);
+    if (command.length > 0) 
+      Logger::dump_hex("params=", command.params, command.length);
     else Serial.println();
 
     if (cmdType == CommandType::Read) {
@@ -74,7 +78,7 @@ void nm_setup() {
 
   //设置发送数据的回调实现
   writer.setWriteCallback([](const byte* buff, byte length) {
-    printHexBytes(", bytes=", buff, length);
+    Logger::dump_hex("bytes", buff, length);
     //通过串口发送
     commSerial.write(buff, length);
     commSerial.flush();
@@ -102,11 +106,12 @@ void wait_response(NMCommand command, unsigned long timeout = 7000) {
   // 记录开始时间
   unsigned long startTime = millis(); // ms, micros() => us
   // unsigned long elapsedTime;
-  Serial.println("wait_response, msgId=" + String(command.msgId) + ", time="+ String(startTime) + ", timeout=" + String(timeout) + "ms"); 
-
+  // Serial.println("wait_response, msgId=" + String(command.msgId) + ", time="+ String(startTime) + ", timeout=" + String(timeout) + "ms"); 
+  Logger::print_log(DEBUG, "waitRsp, msgId=%d, time:%d, timeout=%d ms", command.msgId, startTime, timeout);
   while (!nm_read_available()) {
     if (millis() - startTime >= timeout) {
-      Serial.println("wait_response timeout"); 
+      // Serial.println("wait_response timeout"); 
+      Logger::print_log(INFO, "waitRsp timeout");
       break; // 超时
     }
     // Serial.println("wait_response..."); 
@@ -266,7 +271,7 @@ uint8_t nm_get_sensor_byte(SensorType sensorType, InterfaceCode interface) {
 
 uint8_t* nm_get_sensor_bytes(SensorType sensorType, InterfaceCode interface) {
   get_sensor_values(sensorType, ReadObjectParamType::Data, interface);
-  printHexBytes(strSensorType(sensorType) + ": ", readBuff, readBuffLen);
+  Logger::dump_hex(strSensorType(sensorType).c_str(), readBuff, readBuffLen);
   return readBuff;
 }
 
@@ -484,6 +489,8 @@ String strGestureNumber(GestureNumber no) {
       return "Rock";
     case GestureNumber::Paper:
       return "Paper";  
+      default:
+      return "";
   }
 }
 

@@ -6,29 +6,29 @@ void _delay(float seconds) {
   while(millis() < endTime) _loop();
 }
 
-void setup() {
-  nm_setup();
+void tes_move_gesture(void)
+{
   
   // ******************************************Control Methods******************************************
   // 控制手指
   setFinger(FingerNumber::Thumb, 50); // 0~100
-  Serial.println("fingerAction done");
+  Logger::print_log(INFO, "fingerAction done");
 
   setAllFinger(10, 20, 30, 40, 50); // 0~100
   
   // 控制手势
   setGesture(GestureNumber::Wave, 90); // 0~100
-  Serial.println("gestureAction Wave done");
+  Logger::print_log(INFO, "gestureAction Wave done");
 
   setGesture(GestureNumber::Pinch, 80); // 0~100
-  Serial.println("gestureAction Pinch done");
+  Logger::print_log(INFO, "gestureAction Pinch done");
 
   setLed(LedNumber::Led1, 100, 100, 100); 
   setMotor(MotorNumber::Motor1, 0, 80, 90, 200);
 
   setGPIO(1, GPIOLevel::High);
   setServo(ServoNumber::Servo1, 45);
-  Serial.println("setup done 0");
+  Logger::print_log(INFO, "setup done 0");
   return;
 
   setCar(CarAction::Forward, 50, 1000);
@@ -48,22 +48,46 @@ void setup() {
   nm_get_ir_key();
 
   nm_get_rgb_values(InterfaceCode::A);
-  Serial.println("nm_get_rgb_values done");
+  Logger::print_log(INFO, "nm_get_rgb_values done");
 
   isInColorRange(InterfaceCode::A, 0);
 
   nm_get_sensor_byte(SensorType::Sound, InterfaceCode::A);
-  Serial.println("nm_get_sensor_byte Sound done"); 
+  Logger::print_log(INFO, "nm_get_sensor_byte Sound done"); 
   
   nm_get_sensor_int16(SensorType::Temperature, InterfaceCode::A); 
-  Serial.println("nm_get_sensor_byte Temperature done"); 
+  Logger::print_log(INFO, "nm_get_sensor_byte Temperature done"); 
   
   nm_get_sensor_int16(SensorType::Ultrasonic, InterfaceCode::A); 
-  Serial.println("nm_get_sensor_byte Ultrasonic done"); 
+  Logger::print_log(INFO, "nm_get_sensor_byte Ultrasonic done"); 
 
   getSoftBig(1);
 
-  Serial.println("setup done");
+  Logger::print_log(INFO, "setup done");
+
+}
+static void test_read_aio(void)
+{
+  for(int count=0;count<30;count++){
+      Serial.println("A1");
+      Serial.println(nm_get_aio(1));
+      Serial.println("A2");
+      Serial.println(nm_get_aio(2));
+      Serial.println("A3");
+      Serial.println(nm_get_aio(3));
+      Serial.println("A4");
+      Serial.println(nm_get_aio(4));
+      Serial.println("A5");
+      Serial.println(nm_get_aio(5));
+      _delay(2);
+  }
+}
+
+void setup() {
+
+  nm_setup();
+  // tes_move_gesture();
+  test_read_aio();
 }
 
 void loop() {}

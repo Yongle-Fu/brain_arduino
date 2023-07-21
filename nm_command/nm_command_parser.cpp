@@ -1,4 +1,5 @@
 #include "nm_command_parser.h"
+#include "logger.h"
 
 CommandParser::CommandParser() {}
 
@@ -57,10 +58,13 @@ void CommandParser::checkReady() {
 }
 
 void CommandParser::onReceivedByte(byte data) {
-  if (buffLen == 0) Serial.print("onReceivedData, bytes=");
-  Serial.print("0x");
-  Serial.print(data, HEX);
-  Serial.print(", ");
+
+  if (Logger::m_level == DEBUG) {
+    if (buffLen == 0) Serial.print("onReceivedData, bytes=");
+    Serial.print("0x");
+    Serial.print(data, HEX);
+    Serial.print(", ");
+  }
 
   if (!isStart) {
     if (buffLen == 0 && data != *startBuff) {

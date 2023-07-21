@@ -2,6 +2,7 @@
 #define NM_M_BLOCK_H_
 
 #include "nm_command.h"   
+#include "logger.h"
 
 void setFinger(FingerNumber fingerNum, uint8_t position);
 void setAllFinger(uint8_t pos1, uint8_t pos2, uint8_t pos3, uint8_t pos4, uint8_t pos5);

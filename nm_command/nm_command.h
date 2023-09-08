@@ -197,7 +197,8 @@ struct GestureControl {
 
 struct LedControl {
   ControlType type = ControlType::Led;
-  LedNumber no = LedNumber::Led1;         // LED编号
+  // LedNumber no = LedNumber::Led1;         // LED编号
+  InterfaceCode no = InterfaceCode::A;
   uint8_t rgb[3];                        
 };
 

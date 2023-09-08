@@ -40,9 +40,9 @@ void setGesture(GestureNumber gestureNum, uint8_t position) {
 }
 
 // 封装 nm_set_led 函数调用代码
-void setLed(LedNumber ledNumber, uint8_t r, uint8_t g, uint8_t b) {
+void setLed(InterfaceCode interf, uint8_t r, uint8_t g, uint8_t b) {
   LedControl ledControl;
-  ledControl.no = ledNumber;
+  ledControl.no = interf;
   ledControl.rgb[0] = r;
   ledControl.rgb[1] = g;
   ledControl.rgb[2] = b;
@@ -147,7 +147,7 @@ void setLedByIndex(uint8_t index) {
   };
 
   if (index < sizeof(colors) / sizeof(colors[0])) {
-      setLed(LedNumber::Led1, colors[index][0], colors[index][1], colors[index][2]);
+      setLed(InterfaceCode::A, colors[index][0], colors[index][1], colors[index][2]);
   } else {
       Serial.println("Invalid index!");
   }

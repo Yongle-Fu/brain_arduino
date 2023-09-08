@@ -23,7 +23,7 @@ void tes_move_gesture(void)
   setGesture(GestureNumber::Pinch, 80); // 0~100
   Logger::print_log(INFO, "gestureAction Pinch done");
 
-  setLed(LedNumber::Led1, 100, 100, 100); 
+  setLed(InterfaceCode::A, 100, 100, 100); 
   setMotor(MotorNumber::Motor1, 0, 80, 90, 200);
 
   setGPIO(1, GPIOLevel::High);
@@ -66,6 +66,23 @@ void tes_move_gesture(void)
   Logger::print_log(INFO, "setup done");
 
 }
+static void test_led_set(void)
+{
+
+  _delay(2);
+  setLed(InterfaceCode::A, 100, 10, 10);
+  setLed(InterfaceCode::B, 100, 10, 10);
+  _delay(2);
+  setLed(InterfaceCode::A, 0, 255, 0);
+  setLed(InterfaceCode::B, 100, 10, 150);
+  _delay(1);
+  setLed(InterfaceCode::A, 0, 0, 255);
+  setLed(InterfaceCode::B, 100, 20, 30);
+  _delay(1);
+  setLed(InterfaceCode::A, 0, 100, 80);
+  setLed(InterfaceCode::B, 100, 10, 10);
+  _delay(1);
+}
 static void test_read_aio(void)
 {
   for(int count=0;count<30;count++){
@@ -87,6 +104,7 @@ void setup() {
 
   nm_setup();
   // tes_move_gesture();
+  test_led_set();
   test_read_aio();
 }
 

@@ -109,5 +109,5 @@ void CommandWriter::sendCommand(NMCommand& command) {
   writeCallback(data, len);
 
   // 释放动态分配的内存
-  delete[] command.params;
+  // delete[] command.params;
 }

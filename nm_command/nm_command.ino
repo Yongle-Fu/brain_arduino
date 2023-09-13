@@ -68,20 +68,17 @@ void tes_move_gesture(void)
 }
 static void test_led_set(void)
 {
+    for(;;) {
+      setGesture(static_cast<GestureNumber>(6), 100);
+      Serial.println("gesture move");
+      _delay(2);
+      setGesture(static_cast<GestureNumber>(7), 100);
+      _delay(2);
+      setGesture(GestureNumber::Reset, 0);
+      _delay(1);
+    }
 
-  _delay(2);
-  setLed(InterfaceCode::A, 100, 10, 10);
-  setLed(InterfaceCode::B, 100, 10, 10);
-  _delay(2);
-  setLed(InterfaceCode::A, 0, 255, 0);
-  setLed(InterfaceCode::B, 100, 10, 150);
-  _delay(1);
-  setLed(InterfaceCode::A, 0, 0, 255);
-  setLed(InterfaceCode::B, 100, 20, 30);
-  _delay(1);
-  setLed(InterfaceCode::A, 0, 100, 80);
-  setLed(InterfaceCode::B, 100, 10, 10);
-  _delay(1);
+
 }
 static void test_read_aio(void)
 {
@@ -105,7 +102,7 @@ void setup() {
   nm_setup();
   // tes_move_gesture();
   test_led_set();
-  test_read_aio();
+  // test_read_aio();
 }
 
 void loop() {}

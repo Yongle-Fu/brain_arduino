@@ -14,7 +14,7 @@ static byte readBuff[MAX_READ_BUFF_SIZE];
 static ValueArrayCallback readValueCb = NULL;
 
 LogLevel Logger::m_level = INFO;
-// #define hardwareSerialEnabled 1 
+// #define hardwareSerialEnabled 0
 #ifdef hardwareSerialEnabled
   #define commSerial Serial1  
 #else
@@ -23,16 +23,25 @@ LogLevel Logger::m_level = INFO;
   // SoftwareSerial commSerial(12, 11); // RX, TX
   SoftwareSerial commSerial(19, 18); // RX, TX
 #endif
-
+uint8_t gpio_write[] = {0x5A,  0x1,  0x5,  0x1,  0x0,  0x5,  0x1, 0x01};
 void nm_setup() {
   Serial.begin(115200);
   while (!Serial) ; // wait for serial monitor
   commSerial.begin(56000);
-
-#ifdef hardwareSerialEnabled
-  pinMode(PB2, OUTPUT);
-  pinMode(PB3, INPUT_PULLUP);
-#endif  
+  
+// #ifndef hardwareSerialEnabled
+  pinMode(PC4, OUTPUT);
+  pinMode(PC5, INPUT_PULLUP);
+  // digitalWrite(PC4, HIGH);
+  // delay(50);
+  // digitalWrite(PC4, LOW);
+  // delay(50);
+  // digitalWrite(PC4, HIGH);
+  // delay(50);
+  // digitalWrite(PC4, LOW);
+  // delay(50);
+  // digitalWrite(PC4, HIGH);
+// #endif  
 
   Serial.println("\n---------setup---------");
   Serial.println("Build: 2023/06/02-17:00");
@@ -102,7 +111,7 @@ void nm_serial_read() {
   }
 }
 
-void wait_response(NMCommand command, unsigned long timeout = 7000) {
+int wait_response(NMCommand command, unsigned long timeout = 2000) {
   // 记录开始时间
   unsigned long startTime = millis(); // ms, micros() => us
   // unsigned long elapsedTime;
@@ -112,23 +121,36 @@ void wait_response(NMCommand command, unsigned long timeout = 7000) {
     if (millis() - startTime >= timeout) {
       // Serial.println("wait_response timeout"); 
       Logger::print_log(INFO, "waitRsp timeout");
-      break; // 超时
+      return -1;
     }
     // Serial.println("wait_response..."); 
   }
-
-  if (nm_read_available()) {
-    nm_serial_read();
-    parser.checkReady();
-    writer.checkReady();
-  }
+  return 0;
+  // if (nm_read_available()) {
+  //   nm_serial_read();
+  //   parser.checkReady();
+  //   writer.checkReady();
+  // }
 }
+void send_command(NMCommand command)
+{
+    int res  = 0;
+    uint8_t  sendtry = 2;
 
+    while(sendtry){
+      writer.sendCommand(command);
+      res = wait_response(command);
+      if (res == 0)
+        break;
+      sendtry--;
+    }
+    delete[] command.params;
+}
 // ******************************************Control*********************************************
 void send_control_command(NMCommand command) {
+
   command.cmd = static_cast<uint8_t>(CommandType::Control);
-  writer.addToMessageQueue(&command);
-  wait_response(command);
+  send_command(command);
 }
 
 // 手指控制
@@ -221,8 +243,7 @@ void nm_set_car(CarControl* control) {
 // ******************************************Read Value******************************************
 void send_read_command(NMCommand command) {
   command.cmd = static_cast<uint8_t>(CommandType::Read);
-  writer.addToMessageQueue(&command);
-  wait_response(command);
+  send_command(command);
 }
 
 void get_sensor_values(SensorType sensorType, ReadObjectParamType paramType, InterfaceCode interface) {  

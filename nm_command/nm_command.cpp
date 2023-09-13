@@ -9,6 +9,7 @@ static CommandParser parser;
 static CommandWriter writer;
 
 #define MAX_READ_BUFF_SIZE 4
+#define LIB_VERSION     "0.0.1"
 static int readBuffLen = 0;
 static byte readBuff[MAX_READ_BUFF_SIZE];
 static ValueArrayCallback readValueCb = NULL;
@@ -23,28 +24,13 @@ LogLevel Logger::m_level = INFO;
   // SoftwareSerial commSerial(12, 11); // RX, TX
   SoftwareSerial commSerial(19, 18); // RX, TX
 #endif
-uint8_t gpio_write[] = {0x5A,  0x1,  0x5,  0x1,  0x0,  0x5,  0x1, 0x01};
 void nm_setup() {
   Serial.begin(115200);
   while (!Serial) ; // wait for serial monitor
   commSerial.begin(56000);
   
-// #ifndef hardwareSerialEnabled
-  pinMode(PC4, OUTPUT);
-  pinMode(PC5, INPUT_PULLUP);
-  // digitalWrite(PC4, HIGH);
-  // delay(50);
-  // digitalWrite(PC4, LOW);
-  // delay(50);
-  // digitalWrite(PC4, HIGH);
-  // delay(50);
-  // digitalWrite(PC4, LOW);
-  // delay(50);
-  // digitalWrite(PC4, HIGH);
-// #endif  
-
-  Serial.println("\n---------setup---------");
-  Serial.println("Build: 2023/06/02-17:00");
+  Serial.println("\n--------BrainAI start----------");
+  Serial.println("Lib ver:" LIB_VERSION);
 
   //设置缓冲区大小, 预计指令的最大的长度
   parser.setBufferSize(30);  // 6 + data_length
@@ -61,11 +47,7 @@ void nm_setup() {
     command.msgId = writer.sendingMsgId;
     CommandType cmdType = static_cast<CommandType>(command.cmd);
     Logger::print_log(DEBUG, "msgid=%d, cmd=%d, ret=%d", command.msgId, cmdType, command.resultCode);
-    // if (cmdType == CommandType::Control) {
-    //   auto ctrl = command.params[0];
-    //   Serial.print(", contorl=" + strControlType(static_cast<ControlType>(ctrl)));
-    // }
-    // Serial.print(", retCode=" + String(command.resultCode));
+
     if (!command.isBytes || !command.isSync) {
       Logger::print_log(DEBUG, "isBytes=%d",command.isBytes);
       Logger::print_log(DEBUG, "isSync=%d",command.isSync);

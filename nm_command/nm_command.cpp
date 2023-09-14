@@ -8,7 +8,7 @@
 static CommandParser parser;
 static CommandWriter writer;
 
-#define MAX_READ_BUFF_SIZE 4
+#define MAX_READ_BUFF_SIZE 10
 #define LIB_VERSION     "0.0.1"
 static int readBuffLen = 0;
 static byte readBuff[MAX_READ_BUFF_SIZE];
@@ -54,7 +54,7 @@ void nm_setup() {
     }
     if (command.length > 0) 
       Logger::dump_hex("params=", command.params, command.length);
-    else Serial.println();
+    else Logger::print_log(DEBUG, "");
 
     if (cmdType == CommandType::Read) {
       readBuffLen = command.length;
@@ -63,8 +63,8 @@ void nm_setup() {
         memcpy(readBuff, command.params, readBuffLen);
       }
     }
-    delay(50);
-    writer.processMessageQueue();
+    // delay(50);
+    // writer.processMessageQueue();
   });
 
   //设置发送数据的回调实现
@@ -97,22 +97,21 @@ int wait_response(NMCommand command, unsigned long timeout = 2000) {
   // 记录开始时间
   unsigned long startTime = millis(); // ms, micros() => us
   // unsigned long elapsedTime;
-  // Serial.println("wait_response, msgId=" + String(command.msgId) + ", time="+ String(startTime) + ", timeout=" + String(timeout) + "ms"); 
+  // Logger::print_log(DEBUG, "wait_response, msgId=" + String(command.msgId) + ", time="+ String(startTime) + ", timeout=" + String(timeout) + "ms"); 
   Logger::print_log(DEBUG, "waitRsp, msgId=%d, time:%d, timeout=%d ms", command.msgId, startTime, timeout);
   while (!nm_read_available()) {
     if (millis() - startTime >= timeout) {
-      // Serial.println("wait_response timeout"); 
-      Logger::print_log(INFO, "waitRsp timeout");
+      Logger::print_log(ERROR, "waitRsp timeout");
       return -1;
     }
-    // Serial.println("wait_response..."); 
+    Logger::print_log(DEBUG,"wait_response..."); 
+  }
+  if (nm_read_available()) {
+    nm_serial_read();
+    // parser.checkReady();
+    // writer.checkReady();
   }
   return 0;
-  // if (nm_read_available()) {
-  //   nm_serial_read();
-  //   parser.checkReady();
-  //   writer.checkReady();
-  // }
 }
 void send_command(NMCommand command)
 {
@@ -243,7 +242,6 @@ void get_sensor_values(SensorType sensorType, ReadObjectParamType paramType, Int
 bool nm_is_sensor_ready(SensorType sensorType, InterfaceCode interface) {
   get_sensor_values(sensorType, ReadObjectParamType::Status, interface);
   auto is_ready = readBuff[0] != 0;
-  Serial.println(strSensorType(sensorType) + ", ready status: " + String(is_ready));
   return is_ready;
 }
 
@@ -252,12 +250,10 @@ bool nm_is_sensor_on(SensorType sensorType, InterfaceCode interface) {
   if (sensorType != SensorType::Hall && 
       sensorType != SensorType::Infrared &&  
       sensorType != SensorType::Button) {
-    Serial.println("sensorType is not a switch sensor");
     return false;
   }
   get_sensor_values(sensorType, ReadObjectParamType::Data, interface);
   auto is_on = readBuff[0] != 0;
-  Serial.println(strSensorType(sensorType) + ", is_on: " + String(is_on));
   return is_on;
 }
 
@@ -268,7 +264,6 @@ uint8_t nm_get_sensor_byte(SensorType sensorType, InterfaceCode interface) {
   }
   get_sensor_values(sensorType, ReadObjectParamType::Data, interface);
   auto value = readBuff[0];
-  Serial.println(strSensorType(sensorType) + ": " + String(value));
   return value;
 }
 
@@ -291,7 +286,6 @@ int16_t nm_get_sensor_int16(SensorType sensorType, InterfaceCode interface) {
       sensorType != SensorType::Temperature && 
       sensorType != SensorType::EMG &&
       sensorType != SensorType::Potentiometer) {
-    Serial.println("sensorType is not a int16 sensor");
     return 0;
   }
   get_sensor_values(sensorType, ReadObjectParamType::Data, interface);
@@ -304,9 +298,6 @@ uint8_t nm_get_rgb_value(InterfaceCode interface, uint8_t index) {
   if (index > 2) index = 0;
   nm_get_sensor_bytes(SensorType::RGB, interface);
   auto value = readBuff[index];
-  if (index == 0) Serial.println("R=" + String(value));
-  else if (index == 1) Serial.println("G=" + String(value));
-  else if (index == 2) Serial.println("B=" + String(value));
   return value;
 }
 
@@ -317,7 +308,6 @@ uint8_t* nm_get_rgb_values(InterfaceCode interface) {
 // Digital, [1-15]
 bool nm_get_gpio(uint8_t no) {
   if (no < 1 || no > 15) {
-    Serial.println("gpio no is out of range");
     return 0;
   }
   NMCommand command;
@@ -329,14 +319,12 @@ bool nm_get_gpio(uint8_t no) {
   };
   send_read_command(command);
   auto value = readBuff[0];
-  Serial.println("GPIO_" + String(no) + ": " + String(value));
   return value == 1;
 }
 
 // no,  [1-10]
 uint16_t nm_get_aio(uint8_t no) {
   if (no < 1 || no > 10) {
-    Serial.println("Analog no is out of range");
     return 0;
   }
   NMCommand command;
@@ -348,7 +336,6 @@ uint16_t nm_get_aio(uint8_t no) {
   };
   send_read_command(command);
   uint16_t value = static_cast<uint16_t>(get_buffer_int16());
-  Serial.println("Analog_" + String(no) + ": " + String(value));
   return value;
 }
 
@@ -361,7 +348,6 @@ uint8_t nm_get_finger(FingerNumber no) {
   };
   send_read_command(command);
   auto value = readBuff[0];
-  Serial.println(strFingerNumber(no) + ": " + String(value));
   return value;
 }
 
@@ -373,7 +359,6 @@ uint8_t nm_get_ir_key() {
   };
   send_read_command(command);
   auto value = readBuff[0];
-  Serial.println("IRKey: " + String(value));
   return value;
 }
 
@@ -504,7 +489,7 @@ void printHexBytes(String prefix, const byte* buff, int len) {
     Serial.print(buff[i], HEX);
     if (i < len - 1) Serial.print(", ");
   }
-  Serial.println();
+  Logger::print_log(DEBUG, "\n");
 }
 
 /*

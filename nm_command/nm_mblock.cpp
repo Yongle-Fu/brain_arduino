@@ -40,9 +40,9 @@ void setGesture(GestureNumber gestureNum, uint8_t position) {
 }
 
 // 封装 nm_set_led 函数调用代码
-void setLed(InterfaceCode interf, uint8_t r, uint8_t g, uint8_t b) {
+void setLed(uint8_t r, uint8_t g, uint8_t b, InterfaceCode port) {
   LedControl ledControl;
-  ledControl.no = interf;
+  ledControl.port = port;
   ledControl.rgb[0] = r;
   ledControl.rgb[1] = g;
   ledControl.rgb[2] = b;
@@ -134,7 +134,7 @@ uint8_t getSoftBig(int no) {
   return values[no-1];
 }
 
-void setLedByIndex(uint8_t index) {
+void setLedByIndex(uint8_t index, InterfaceCode port) {
   const uint8_t colors[][3] = {
       {0, 0, 0},        // 熄灭
       {255, 0, 0},      // 红色
@@ -147,7 +147,7 @@ void setLedByIndex(uint8_t index) {
   };
 
   if (index < sizeof(colors) / sizeof(colors[0])) {
-      setLed(InterfaceCode::A, colors[index][0], colors[index][1], colors[index][2]);
+      setLed(colors[index][0], colors[index][1], colors[index][2], port);
   } else {
       Serial.println("Invalid index!");
   }

@@ -161,7 +161,7 @@ enum class IRKeyCode : uint8_t {
   Key8 = 8,     // '8' 键
   Key9 = 9,     // '9' 键
   Key0 = 10,    // '0' 键
-  Power = 11,   // Power 键,
+  // Power = 11,   // Power 键,
   Plus = 12,    // '+' 键
   Minus = 13,   // '-' 键
   A = 14,       // 'A' 键
@@ -197,8 +197,7 @@ struct GestureControl {
 
 struct LedControl {
   ControlType type = ControlType::Led;
-  // LedNumber no = LedNumber::Led1;         // LED编号
-  InterfaceCode no = InterfaceCode::A;
+  InterfaceCode port = InterfaceCode::A;
   uint8_t rgb[3];                        
 };
 

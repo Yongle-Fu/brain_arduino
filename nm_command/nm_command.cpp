@@ -164,7 +164,7 @@ void nm_set_led(LedControl* control) {
   command.length = 5;
   command.params = new uint8_t[command.length];
   command.params[0] = static_cast<uint8_t>(control->type);
-  command.params[1] = static_cast<uint8_t>(control->no);
+  command.params[1] = static_cast<uint8_t>(control->port);
   for (int i = 0; i < 3; i++) {
     command.params[i + 2] = control->rgb[i];
   }

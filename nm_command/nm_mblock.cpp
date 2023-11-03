@@ -91,9 +91,9 @@ void setCar(CarAction carAction, uint8_t speed, uint8_t time) {
 }
 
 bool isRedColor(int red, int green, int blue) {
-  const int redThreshold = 100; // 红色阈值
+  int sum = red + green + blue;
   // 判断是否属于红色范围
-  if (red >= redThreshold && green < red && blue < red) {
+  if (red / sum > 0.5) {
       return true; // 是红色
   } else {
       return false; // 不是红色
@@ -101,9 +101,9 @@ bool isRedColor(int red, int green, int blue) {
 }
 
 bool isGreenColor(int red, int green, int blue) {
-  const int greenThreshold = 100; // 绿色阈值
+  int sum = red + green + blue;
   // 判断是否属于绿色范围
-  if (green >= greenThreshold && red < green && blue < green) {
+  if (green / sum > 0.5) {
       return true; // 是绿色
   } else {
       return false; // 不是绿色
@@ -111,9 +111,9 @@ bool isGreenColor(int red, int green, int blue) {
 }
 
 bool isBlueColor(int red, int green, int blue) {
-  const int blueThreshold = 100; // 蓝色阈值
+  int sum = red + green + blue;
   // 判断是否属于蓝色范围
-  if (blue >= blueThreshold && red < blue && green < blue) {
+  if (blue / sum > 0.5) {
       return true; // 是蓝色
   } else {
       return false; // 不是蓝色

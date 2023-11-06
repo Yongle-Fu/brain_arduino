@@ -93,7 +93,8 @@ void setCar(CarAction carAction, uint8_t speed, uint8_t time) {
 bool isRedColor(int red, int green, int blue) {
   int sum = red + green + blue;
   // 判断是否属于红色范围
-  if (red / sum > 0.5) {
+  float ratio = (sum > 0) ? (float)red / sum : 0.0f;
+  if (ratio > 0.5f) {
       return true; // 是红色
   } else {
       return false; // 不是红色
@@ -103,7 +104,8 @@ bool isRedColor(int red, int green, int blue) {
 bool isGreenColor(int red, int green, int blue) {
   int sum = red + green + blue;
   // 判断是否属于绿色范围
-  if (green / sum > 0.5) {
+  float ratio = (sum > 0) ? (float)green / sum : 0.0f;
+  if (ratio > 0.43f) {
       return true; // 是绿色
   } else {
       return false; // 不是绿色
@@ -113,7 +115,8 @@ bool isGreenColor(int red, int green, int blue) {
 bool isBlueColor(int red, int green, int blue) {
   int sum = red + green + blue;
   // 判断是否属于蓝色范围
-  if (blue / sum > 0.5) {
+  float ratio = (sum > 0) ? (float)blue / sum : 0.0f;
+  if (ratio > 0.49f) {
       return true; // 是蓝色
   } else {
       return false; // 不是蓝色

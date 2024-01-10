@@ -9,3 +9,11 @@
 
 [Arduino library Registry](<https://github.com/arduino/library-registry>)
 [Arduino Style Guide](<https://docs.arduino.cc/learn/contributions/arduino-library-style-guide>)
+[Arduino Lint](<https://arduino.github.io/arduino-lint>)
+
+## Lint
+
+```sh
+arduino-lint
+arduino-lint --compliance strict
+```

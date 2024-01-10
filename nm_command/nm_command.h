@@ -220,7 +220,7 @@ struct GPIOControl {
 struct ServoControl {
   ControlType type = ControlType::Servo;
   ServoNumber no;
-  uint8_t angle; // 转角度, [0-100]
+  uint8_t angle; // 旋转角度, [0-180]
 };
 
 struct CarControl {

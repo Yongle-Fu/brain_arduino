@@ -23,7 +23,7 @@ void tes_move_gesture(void)
   setGesture(GestureNumber::Pinch, 80); // 0~100
   Logger::print_log(INFO, "gestureAction Pinch done");
 
-  setLed(InterfaceCode::A, 100, 100, 100); 
+  setLed(100, 100, 100, InterfaceCode::A); 
   setMotor(MotorNumber::Motor1, 0, 80, 90, 200);
 
   setGPIO(1, GPIOLevel::High);

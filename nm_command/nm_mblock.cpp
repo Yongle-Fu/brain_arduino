@@ -75,7 +75,7 @@ void setGPIO(uint8_t gpioNumber, GPIOLevel level) {
 void setServo(ServoNumber servoNumber, uint8_t angle) {
   ServoControl servoControl;
   servoControl.no = servoNumber;
-  servoControl.angle = angle;
+  servoControl.angle = min(angle, 180);
 
   nm_set_servo(&servoControl);
 }

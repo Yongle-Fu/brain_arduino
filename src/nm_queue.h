@@ -20,7 +20,7 @@ public:
   bool isEmpty();
   
   void enqueue(NMCommand& command);
-  NMCommand dequeue();
+  NMCommand& dequeue();
 };
 
 #endif

@@ -14,28 +14,28 @@ enum LogLevel {
 
 class Logger {
 public:
-    static LogLevel  m_level;
-    Logger(LogLevel level){m_level = level;}
+    static LogLevel  mLevel;
+    Logger(LogLevel level){mLevel = level;}
 
-    static void dump_hex(const char *prefix, const byte *buff, byte len)
+    static void dumpHex(const char *prefix, const byte *buffer, byte len)
     {
-        if (m_level > DEBUG)
+        if (mLevel > DEBUG)
             return;
         Serial.print(","+ String(prefix)+ ":");
         // Serial.print(":");
         for (int i = 0; i < len; i++) {
             Serial.print("0x");
-            Serial.print(buff[i], HEX);
+            Serial.print(buffer[i], HEX);
             if (i < len - 1) Serial.print(", ");
         }
         Serial.println();
     }
 
-    static void print_log(LogLevel level, const char* format, ...)
+    static void print(LogLevel level, const char* format, ...)
     {
         va_list argptr;
         char buffer[256] ={0}; 
-        if (level < m_level)
+        if (level < mLevel)
             return;
         switch(level) { 
             case DEBUG:
@@ -58,9 +58,9 @@ public:
         Serial.println();
     }
 
-    static void set_lev(LogLevel level)
+    static void setLevel(LogLevel level)
     {
-        m_level = level;
+        mLevel = level;
     }
 };
 

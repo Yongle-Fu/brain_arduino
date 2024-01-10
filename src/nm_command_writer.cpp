@@ -6,34 +6,33 @@ static NMQueue messageQueue; // 消息队列
 
 CommandWriter::CommandWriter() {}
 CommandWriter::~CommandWriter() {
-  if(startBuff != NULL) {
-    free(startBuff);
-    startBuff = NULL;
+  if(startBuffer != NULL) {
+    free(startBuffer);
+    startBuffer = NULL;
   }
 }
 
 void CommandWriter::setStart(byte* st, unsigned int size) {
-  if(startBuff != NULL) {
-    free(startBuff);
-    startBuff = NULL;
+  if(startBuffer != NULL) {
+    free(startBuffer);
+    startBuffer = NULL;
   }
-  startBuff = (byte*)malloc(sizeof(byte) * size);
+  startBuffer = (byte*)malloc(sizeof(byte) * size);
   startSize = size;
-  memcpy(startBuff, st, size);
+  memcpy(startBuffer, st, size);
 }
 
 // 将NMCommand结构体添加到消息队列
-void CommandWriter::addToMessageQueue(NMCommand* command) {
-  command->isBytes = true;
-  command->isSync = true;
-  command->msgId = msgId;
+void CommandWriter::addToMessageQueue(NMCommand& command) {
+  command.isBytes = true;
+  command.isSync = true;
+  command.msgId = msgId;
   msgId++;
-
-  NMCommand& commandRef = *command;
+  
   if (sendingMsgId >= 0) {
-    messageQueue.enqueue(commandRef);
+    messageQueue.enqueue(command);
   } else {
-    sendCommand(commandRef);
+    sendCommand(command);
   }
 }
 
@@ -66,12 +65,12 @@ void CommandWriter::sendCommand(NMCommand& command) {
     return;
   }
   
-  uint8_t payload_len = command.length + 2;
-  uint8_t len = payload_len + startSize + 1;
+  uint8_t payloadLength = command.length + 2;
+  uint8_t len = payloadLength + startSize + 1;
   byte data[len];
   for (int i = 0; i < len; i++) {
-      if (i < startSize) data[i] = startBuff[i];
-      else if (i == startSize) data[i] = payload_len;
+      if (i < startSize) data[i] = startBuffer[i];
+      else if (i == startSize) data[i] = payloadLength;
       else if (i == startSize+1) data[i] = command.cmd;
       else if (i == startSize+2) data[i] = 0; //cmd_attr
       else data[i] = command.params[i-startSize-3];
@@ -86,23 +85,23 @@ void CommandWriter::sendCommand(NMCommand& command) {
       ControlType ctrlType = static_cast<ControlType>(ctrlVal);
       switch (ctrlType) {
         case ControlType::Finger:
-          Logger::print_log(DEBUG, "wr,msgid:%d, ctr:finger, payload len:%d",sendingMsgId, payload_len );
+          Logger::print(DEBUG, "wr,msgid:%d, ctr:finger, payload len:%d",sendingMsgId, payloadLength );
           break;
         case ControlType::Gesture: {
           uint8_t numVal = command.params[1];
           uint8_t posVal = command.params[2];
-          Logger::print_log(DEBUG, "wr,msgid:%d, ctr:gesture, %s,pos:%d,len:%d",sendingMsgId, strGestureNumber(static_cast<GestureNumber>(numVal)).c_str(),posVal, payload_len);
+          Logger::print(DEBUG, "wr,msgid:%d, ctr:gesture, %s,pos:%d,len:%d",sendingMsgId, strGestureNumber(static_cast<GestureNumber>(numVal)).c_str(),posVal, payloadLength);
 
           break;
         }
         default:
-          Logger::print_log(DEBUG, "wr,msgid:%d, ctr:%s,len:%d",sendingMsgId, strControlType(ctrlType).c_str(),  payload_len);
+          Logger::print(DEBUG, "wr,msgid:%d, ctr:%s,len:%d",sendingMsgId, strControlType(ctrlType).c_str(),  payloadLength);
           break;
       }
       break;
     }
     default:
-          Logger::print_log(DEBUG, "wr,msgid:%d, cmd:%s,len:%d",sendingMsgId, strCommandType(cmdType).c_str(),  payload_len);
+          Logger::print(DEBUG, "wr,msgid:%d, cmd:%s,len:%d",sendingMsgId, strCommandType(cmdType).c_str(),  payloadLength);
       break;
   }
   

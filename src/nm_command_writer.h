@@ -13,7 +13,7 @@
 #include "nm_command.h"
 class CommandWriter {
 private:
-  byte* startBuff = NULL;
+  byte* startBuffer = NULL;
   int startSize = 0;
   ValueArrayCallback writeCallback = NULL;
 
@@ -30,7 +30,7 @@ public:
   void sendCommand(NMCommand& command);
 
   // 将NMCommand结构体添加到消息队列
-  void addToMessageQueue(NMCommand* command);
+  void addToMessageQueue(NMCommand& command);
 
   // 从消息队列中获取并处理NMCommand结构体消息
   void processMessageQueue();

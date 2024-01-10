@@ -124,7 +124,11 @@ enum class LedNumber : uint8_t {
 
 enum class ServoNumber : uint8_t {
   Servo1 = 0,    // 舵机1
-  Servo2 = 1     // 舵机2
+  Servo2 = 1,    // 舵机2
+  Servo3 = 2,    // 舵机3
+  Servo4 = 3,    // 舵机4
+  Servo5 = 4,    // 舵机5
+  Servo6 = 5     // 舵机6, 扩展舵机
 };
 
 enum class CarAction : uint8_t {

@@ -1,11 +1,3 @@
-/*
- * 自定义通信协议
- * 支持arduino uno, stm32, esp32
- * @Url: [主控与编程板通信协议](https://brainco.yuque.com/qc91eq/lbx4ww/kngkgigdgbgghw3s)
- * @Author: Yongle Fu
- * @Date: 2023-05-12
- * version: 0.0.1
- */
 #ifndef NM_Command_H_
 #define NM_Command_H_
 
@@ -244,42 +236,42 @@ struct NMCommand {
   int length;
 };
 
-void nm_setup();
-bool nm_read_available();
-bool nm_write_available();
-void nm_serial_read();
+void programSetup();
+bool isSerivalAvailable();
+bool isWriterAvailable();
+void serivalReadBytes();
 
 // ******************************************Control Methods******************************************
-void nm_set_finger(FingerControl* control);
-void nm_set_gesture(GestureControl* control);
-void nm_set_led(LedControl* control);
-void nm_set_motor(MotorControl* control);
-void nm_set_gpio(GPIOControl* control);
-void nm_set_servo(ServoControl* control);
-void nm_set_car(CarControl* control);
+void setFingerControl(FingerControl* control);
+void setGestureControl(GestureControl* control);
+void setLedControl(LedControl* control);
+void setMotorControl(MotorControl* control);
+void setGpioControl(GPIOControl* control);
+void setServoControl(ServoControl* control);
+void setCarControl(CarControl* control);
 
 // *******************************************Read Methods********************************************
-typedef void (*ValueArrayCallback)(const byte* buff, byte length); 
+typedef void (*ValueArrayCallback)(const byte* buffer, byte length); 
 // typedef void (*ValueCB)(const byte* bytes, uint8_t len);
 
-bool nm_is_sensor_ready(SensorType sensorType, InterfaceCode interface);
-bool nm_is_sensor_on(SensorType sensorType, InterfaceCode interface);
+bool isSensorReady(SensorType sensorType, InterfaceCode interface);
+bool isSensorOn(SensorType sensorType, InterfaceCode interface);
 
-uint8_t  nm_get_sensor_byte(SensorType sensorType, InterfaceCode interface);
-uint8_t* nm_get_sensor_bytes(SensorType sensorType, InterfaceCode interface);
+uint8_t  getSensorByte(SensorType sensorType, InterfaceCode interface);
+uint8_t* getSensorBytes(SensorType sensorType, InterfaceCode interface);
 
-int16_t nm_get_sensor_int16(SensorType sensorType, InterfaceCode interface);
+int16_t getSensorInt16(SensorType sensorType, InterfaceCode interface);
 
 // RGB color
-uint8_t nm_get_rgb_value(InterfaceCode interface, uint8_t index);
-uint8_t* nm_get_rgb_values(InterfaceCode interface);
+uint8_t  getRgbValue(InterfaceCode interface, uint8_t index);
+uint8_t* getRgbValues(InterfaceCode interface);
 
-bool nm_get_gpio(uint8_t no);// Digital, [1-15], [0-1], LOW-HIGH
-uint16_t nm_get_aio(uint8_t no); // Analog,  [1-10], [0-4095]
+bool isGpioHigh(uint8_t no);// Digital, [1-15], [0-1], LOW-HIGH
+uint16_t getAioValue(uint8_t no); // Analog,  [1-10], [0-4095]
 
-uint8_t nm_get_finger(FingerNumber no);
-uint8_t nm_get_ir_key(); // return IR key code
-bool nm_is_ir_key_pressed(uint8_t key);
+uint8_t getFingerValue(FingerNumber no);
+uint8_t getIrKey(); // return IR key code
+bool isIrKeyPressed(uint8_t key);
 
 // ******************************************Print Methods******************************************
 String strCommandType(CommandType type);
@@ -287,6 +279,6 @@ String strControlType(ControlType type);
 String strSensorType(SensorType type);
 String strFingerNumber(FingerNumber no);
 String strGestureNumber(GestureNumber no);
-void printHexBytes(String prefix, const byte* buff, int len);
+void printHexBytes(String prefix, const byte* buffer, int len);
 
 #endif

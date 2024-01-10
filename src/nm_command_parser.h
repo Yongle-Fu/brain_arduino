@@ -16,12 +16,12 @@ typedef void (*ResolvedCommandCallback)(NMCommand& command);
 class CommandParser {
   private:
   bool isStart = false;
-  byte* startBuff = NULL;
+  byte* startBuffer = NULL;
   int startSize = 0;
 
-  byte* buff = NULL;
-  int buffLen = 0;
-  int buffMaxSize = 0;
+  byte* buffer = NULL;
+  int bufferLength = 0;
+  int bufferMaxSize = 0;
   
   ResolvedCommandCallback resolvedCommandCallback = NULL;
   

@@ -4,39 +4,39 @@
 CommandParser::CommandParser() {}
 
 CommandParser::~CommandParser() {
-  if(buff != NULL) {
-    free(buff);
-    buff = NULL;
+  if(buffer != NULL) {
+    free(buffer);
+    buffer = NULL;
   }
-  if(startBuff != NULL) {
-    free(startBuff);
-    startBuff = NULL;
+  if(startBuffer != NULL) {
+    free(startBuffer);
+    startBuffer = NULL;
   }
 }
 
 bool CommandParser::setBufferSize(unsigned int size) {
-  buff = (byte*)malloc(sizeof(byte) * size);
-  if(buff == NULL) {
+  buffer = (byte*)malloc(sizeof(byte) * size);
+  if(buffer == NULL) {
     return false;
   }
-  buffMaxSize = size;
-  memset(buff, 0, size);
+  bufferMaxSize = size;
+  memset(buffer, 0, size);
   return true;
 }
 
 void CommandParser::setStart(byte* st, unsigned int size) {
-  if(startBuff != NULL) {
-    free(startBuff);
-    startBuff = NULL;
+  if(startBuffer != NULL) {
+    free(startBuffer);
+    startBuffer = NULL;
   }
-  startBuff = (byte*)malloc(sizeof(byte) * size);
+  startBuffer = (byte*)malloc(sizeof(byte) * size);
   startSize = size;
-  memcpy(startBuff, st, size);
+  memcpy(startBuffer, st, size);
 }
 
 bool CommandParser::isMatchStart(byte startOffset) {
   for (int i = 0; i < startSize; i++) {
-    if (*(buff + i + startOffset) != *(startBuff + i)) {
+    if (*(buffer + i + startOffset) != *(startBuffer + i)) {
       return false;
     }
   }
@@ -49,8 +49,8 @@ void CommandParser::setMessageCallback(ResolvedCommandCallback cb) {
 
 void CommandParser::reset() {
   isStart = false;
-  buffLen = 0;
-  memset(buff, 0, buffMaxSize);
+  bufferLength = 0;
+  memset(buffer, 0, bufferMaxSize);
 }
 
 void CommandParser::checkReady() {
@@ -59,51 +59,51 @@ void CommandParser::checkReady() {
 
 void CommandParser::onReceivedByte(byte data) {
 
-  if (Logger::m_level == DEBUG) {
-    if (buffLen == 0) Serial.print("onReceivedData, bytes=");
+  if (Logger::mLevel == DEBUG) {
+    if (bufferLength == 0) Serial.print("onReceivedData, bytes=");
     Serial.print("0x");
     Serial.print(data, HEX);
     Serial.print(", ");
   }
 
   if (!isStart) {
-    if (buffLen == 0 && data != *startBuff) {
+    if (bufferLength == 0 && data != *startBuffer) {
       return;
     }
-    *(buff + buffLen) = data;
-    buffLen++;
-    if (buffLen >= startSize) {
+    *(buffer + bufferLength) = data;
+    bufferLength++;
+    if (bufferLength >= startSize) {
       //检测到帧头
-      bool isMatch = isMatchStart(buffLen - startSize);
+      bool isMatch = isMatchStart(bufferLength - startSize);
       if (isMatch) {
         isStart = true;
-        if (buffLen > startSize) {
-          buff = buff + buffLen - startSize;
-          buffLen = startSize;
+        if (bufferLength > startSize) {
+          buffer = buffer + bufferLength - startSize;
+          bufferLength = startSize;
         }
       }
     }
     return;
   }
 
-  if (buffLen >= buffMaxSize) {
-    buffLen = 0;
+  if (bufferLength >= bufferMaxSize) {
+    bufferLength = 0;
     isStart = false;
   }
 
-  *(buff + buffLen) = data;
-  buffLen++;
+  *(buffer + bufferLength) = data;
+  bufferLength++;
 
-  byte payload_offset = startSize + 1;
-  byte params_offset = startSize + 4;
-  if (isStart && buffLen >= payload_offset) {
-    byte payload_len = *(buff + startSize);
+  byte payloadOffset = startSize + 1;
+  byte paramOffset = startSize + 4;
+  if (isStart && bufferLength >= payloadOffset) {
+    byte payloadLength = *(buffer + startSize);
     // 一条指令回复
-    if (buffLen == payload_len + payload_offset) {
+    if (bufferLength == payloadLength + payloadOffset) {
       // 获取指令回复信息
-      byte cmd = *(buff + payload_offset);
-      byte cmd_attr = *(buff + payload_offset + 1);
-      byte resultCode = *(buff + payload_offset + 2);
+      byte cmd = *(buffer + payloadOffset);
+      byte cmd_attr = *(buffer + payloadOffset + 1);
+      byte resultCode = *(buffer + payloadOffset + 2);
 
       // 判断是否为完整指令（无分包）
       if ((cmd_attr & 0x1) != 0) {
@@ -119,16 +119,16 @@ void CommandParser::onReceivedByte(byte data) {
         command.resultCode = resultCode;
         command.isBytes = isBytes;
         command.isSync = isSync;
-        command.params = buff + params_offset;
-        command.length = buffLen - params_offset;
+        command.params = buffer + paramOffset;
+        command.length = bufferLength - paramOffset;
         if (resolvedCommandCallback != NULL) {
           resolvedCommandCallback(command);
         }
       }
     
       isStart = false;
-      buffLen = 0;
-      memset(buff, 0, buffMaxSize);
+      bufferLength = 0;
+      memset(buffer, 0, bufferMaxSize);
     }
   }
 }

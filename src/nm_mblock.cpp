@@ -10,7 +10,7 @@ void setFinger(FingerNumber fingerNum, uint8_t position) {
     fingerControl.pos[i] = i == index ? position+1: 0;
   }
 
-  nm_set_finger(&fingerControl);
+  setFingerControl(&fingerControl);
 }
 
 void setAllFinger(uint8_t pos1, uint8_t pos2, uint8_t pos3, uint8_t pos4, uint8_t pos5) {
@@ -27,7 +27,7 @@ void setAllFinger(uint8_t pos1, uint8_t pos2, uint8_t pos3, uint8_t pos4, uint8_
   fingerControl.pos[3] = pos4 + 1;
   fingerControl.pos[4] = pos5 + 1;
 
-  nm_set_finger(&fingerControl);
+  setFingerControl(&fingerControl);
 }
 
 // 手势控制
@@ -36,10 +36,10 @@ void setGesture(GestureNumber gestureNum, uint8_t position) {
   control.no = gestureNum;
   control.pos = position;
 
-  nm_set_gesture(&control);
+  setGestureControl(&control);
 }
 
-// 封装 nm_set_led 函数调用代码
+// 封装 setLedControl 函数调用代码
 void setLed(uint8_t r, uint8_t g, uint8_t b, InterfaceCode port) {
   LedControl ledControl;
   ledControl.port = port;
@@ -47,10 +47,10 @@ void setLed(uint8_t r, uint8_t g, uint8_t b, InterfaceCode port) {
   ledControl.rgb[1] = g;
   ledControl.rgb[2] = b;
 
-  nm_set_led(&ledControl);
+  setLedControl(&ledControl);
 }
 
-// 封装 nm_set_motor 函数调用代码
+// 封装 setMotorControl 函数调用代码
 void setMotor(MotorNumber motorNumber, uint8_t direction, uint8_t speed, uint8_t angle, uint8_t time) {
   MotorControl motorControl;
   motorControl.no = motorNumber;
@@ -59,16 +59,16 @@ void setMotor(MotorNumber motorNumber, uint8_t direction, uint8_t speed, uint8_t
   motorControl.angle = angle;
   motorControl.time = time;
 
-  nm_set_motor(&motorControl);
+  setMotorControl(&motorControl);
 }
 
-// 封装 nm_set_gpio 函数调用代码
+// 封装 setGpioControl 函数调用代码
 void setGPIO(uint8_t gpioNumber, GPIOLevel level) {
   GPIOControl gpioControl;
   gpioControl.no = gpioNumber;
   gpioControl.level = level;
 
-  nm_set_gpio(&gpioControl);
+  setGpioControl(&gpioControl);
 }
 
 // 封装 nm_set_servo 函数调用代码
@@ -79,7 +79,7 @@ void setServo(ServoNumber servoNumber, uint8_t angle) {
   if (servoNumber == static_cast<ServoNumber>(5)) {
       servoControl.no = static_cast<ServoNumber>(0);
       servoControl.angle = min(angle, 180);
-      nm_set_servo(&servoControl);
+      setServoControl(&servoControl);
   } else {
     uint8_t revert_table[5] = {1,0,1,1,0};
     uint8_t pos = 0, real_angle = 0;
@@ -95,19 +95,18 @@ void setServo(ServoNumber servoNumber, uint8_t angle) {
     for (int i = 0; i < 5; i++) {
       fingerControl.pos[i] = i == index ? pos+1: 0;
     }
-    nm_set_finger(&fingerControl);
+    setFingerControl(&fingerControl);
   }
-
 }
 
-// 封装 nm_set_car 函数调用代码
+// 封装 setCarControl 函数调用代码
 void setCar(CarAction carAction, uint8_t speed, uint8_t time) {
   CarControl carControl;
   carControl.no = carAction;
   carControl.speed = speed;
   carControl.time = time;
 
-  nm_set_car(&carControl);
+  setCarControl(&carControl);
 }
 
 bool isRedColor(int red, int green, int blue) {
@@ -144,7 +143,7 @@ bool isBlueColor(int red, int green, int blue) {
 }
 
 bool isInColorRange(InterfaceCode port, int index) {
-  byte* rgb = nm_get_rgb_values(port);
+  byte* rgb = getRgbValues(port);
   if (index == 0) return isRedColor(rgb[0], rgb[1], rgb[2]);
   else if (index == 1) return isGreenColor(rgb[0], rgb[1], rgb[2]);
   else if (index == 2) return isBlueColor(rgb[0], rgb[1], rgb[2]);
@@ -153,7 +152,7 @@ bool isInColorRange(InterfaceCode port, int index) {
 
 uint8_t getSoftBig(int no) {
   if (no < 1 || no > 5) return 0;
-  byte* values = nm_get_sensor_bytes(SensorType::SoftBig, InterfaceCode::F);
+  byte* values = getSensorBytes(SensorType::SoftBig, InterfaceCode::F);
   return values[no-1];
 }
 

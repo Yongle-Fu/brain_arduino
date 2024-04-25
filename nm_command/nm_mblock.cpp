@@ -72,12 +72,30 @@ void setGPIO(uint8_t gpioNumber, GPIOLevel level) {
 }
 
 // 封装 nm_set_servo 函数调用代码
+// 因为固件上未实现单独控制5个手势舵机的功能，这里需要借用单独控制手指动作的指令来实现
+// 注意单独控制舵机的方向可能与运动方向不一致，需要进行判断及转换
 void setServo(ServoNumber servoNumber, uint8_t angle) {
   ServoControl servoControl;
-  servoControl.no = servoNumber;
-  servoControl.angle = min(angle, 180);
+  if (servoNumber == static_cast<ServoNumber>(5)) {
+      servoControl.no = static_cast<ServoNumber>(0);
+      servoControl.angle = min(angle, 180);
+      nm_set_servo(&servoControl);
+  } else {
+    uint8_t revert_table[5] = {1,0,1,1,0};
+    uint8_t pos = 0, real_angle = 0;
+    uint8_t index = (uint8_t)servoNumber;
+    FingerControl fingerControl = {ControlType::Finger,{0,0,0,0,0}};
+    
+    if (revert_table[index]) {
+      real_angle = 180 - min(angle,180);
+    } else {
+      real_angle = min(angle, 180);
+    }
+    pos = real_angle * 100 / 180;
+    fingerControl.pos[index] = pos + 1;
+    nm_set_finger(&fingerControl);
+  }
 
-  nm_set_servo(&servoControl);
 }
 
 // 封装 nm_set_car 函数调用代码

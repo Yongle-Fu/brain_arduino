@@ -84,15 +84,17 @@ void setServo(ServoNumber servoNumber, uint8_t angle) {
     uint8_t revert_table[5] = {1,0,1,1,0};
     uint8_t pos = 0, real_angle = 0;
     uint8_t index = (uint8_t)servoNumber;
-    FingerControl fingerControl = {ControlType::Finger,{0,0,0,0,0}};
-    
+    FingerControl fingerControl ;
+  
     if (revert_table[index]) {
       real_angle = 180 - min(angle,180);
     } else {
       real_angle = min(angle, 180);
     }
     pos = real_angle * 100 / 180;
-    fingerControl.pos[index] = pos + 1;
+    for (int i = 0; i < 5; i++) {
+      fingerControl.pos[i] = i == index ? pos+1: 0;
+    }
     nm_set_finger(&fingerControl);
   }
 

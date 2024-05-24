@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "Neuro_Master.h"
+#include "NeuroMaster.h"
 
 void _delay(float seconds) {
   long endTime = millis() + seconds * 1000;

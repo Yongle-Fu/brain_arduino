@@ -4,7 +4,6 @@
 #include "nm_command_writer.h"
 #include "logger.h"
 
-
 static CommandParser parser;
 static CommandWriter writer;
 

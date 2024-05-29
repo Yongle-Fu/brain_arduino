@@ -1,9 +1,26 @@
 #include <Arduino.h>
 #include "NeuroMaster.h"
 
-void _delay(float seconds) {
-  long endTime = millis() + seconds * 1000;
-  while(millis() < endTime) _loop();
+void setup() {
+  programSetup();
+  testLED();
+  // testGestures();
+  // testReadAio();
+}
+
+void loop() {}
+void _loop() {}
+
+static void testLED(void) {
+    for(;;) {
+      setGesture(static_cast<GestureNumber>(6), 100);
+      Serial.println("gesture move");
+      _delay(2);
+      setGesture(static_cast<GestureNumber>(7), 100);
+      _delay(2);
+      setGesture(GestureNumber::Reset, 0);
+      _delay(1);
+    }
 }
 
 static void testGestures(void) {
@@ -29,9 +46,7 @@ static void testGestures(void) {
   Logger::print(INFO, "setup done 0");
   return;
 
-  setCar(CarAction::Forward, 50, 1000);
-  // setCar(static_cast<CarAction>(/*{direction}*/), /*{speed}*/, 0);
-  // setCar(static_cast<CarAction>(/*{direction}*/), /*{speed}*/, /*{time}*/);
+  setCar(CarAction::Forward, 50, 100); // direction, spped, time
 
   // *******************************************Read Methods********************************************
   isSensorReady(SensorType::RGB, InterfaceCode::A);
@@ -64,19 +79,7 @@ static void testGestures(void) {
   Logger::print(INFO, "setup done");
 }
 
-static void testLED(void) {
-    for(;;) {
-      setGesture(static_cast<GestureNumber>(6), 100);
-      Serial.println("gesture move");
-      _delay(2);
-      setGesture(static_cast<GestureNumber>(7), 100);
-      _delay(2);
-      setGesture(GestureNumber::Reset, 0);
-      _delay(1);
-    }
-}
-
-static void testReadAio(void) {
+static void testReadAio() {
   for(int count=0;count<30;count++){
       Serial.println("A1");
       Serial.println(getAioValue(1));
@@ -92,10 +95,7 @@ static void testReadAio(void) {
   }
 }
 
-void setup() {
-  programSetup();
-  testLED();
+void _delay(float seconds) {
+  unsigned long endTime = millis() + seconds * 1000;
+  while(millis() < endTime) _loop();
 }
-
-void loop() {}
-void _loop() {}

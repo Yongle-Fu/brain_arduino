@@ -26,7 +26,7 @@ void NMQueue::enqueue(NMCommand& command) {
   }
 }
 
-NMCommand& NMQueue::dequeue() {
+NMCommand NMQueue::dequeue() {
   NMCommand command;
   if (!isEmpty()) {
     command = queueArray[frontIndex];

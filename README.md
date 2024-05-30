@@ -39,8 +39,9 @@ Every hour, the automated Library Manager indexer system:
 
 ```sh
 arduino-lint --recursive --library-manager submit
+arduino-lint --recursive --library-manager update
 arduino-lint --compliance strict
-
+arduino-cli lib search NeuroMaster
 https://downloads.arduino.cc/libraries/logs/github.com/arduino-libraries/Servo/
 https://downloads.arduino.cc/libraries/logs/github.com/BrainCoTech/brain_arduino/
 ```

@@ -38,11 +38,17 @@ Every hour, the automated Library Manager indexer system:
 ## Lint
 
 ```sh
+# install arduino-lint
 sudo curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | BINDIR=~/local/bin sh
 export PATH=$PATH:~/local/bin
-arduino-lint --recursive --library-manager submit
 
+# Adding a library to Library Manager
+# https://github.com/arduino/library-registry
+arduino-lint --recursive --library-manager submit
 arduino-lint --compliance strict
+# new a PR request
+
+# Library search
 arduino-cli lib search NeuroMaster
 https://downloads.arduino.cc/libraries/logs/github.com/arduino-libraries/Servo/
 https://downloads.arduino.cc/libraries/logs/github.com/BrainCoTech/brain_arduino/
@@ -52,4 +58,6 @@ https://github.com/BrainCoTech/brain_arduino/
 arduino-lint --recursive --library-manager update
 git tag v0.0.7  # 使用新的版本号创建标签
 git push origin v0.0.7  # 推送标签到远程仓库
+# indexer checks for new releases every hour and will eventually fetch and publish the new release.
+https://github.com/arduino/library-registry/blob/main/FAQ.md#how-is-the-library-manager-index-generated
 ```
